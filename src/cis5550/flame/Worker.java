@@ -32,7 +32,7 @@ class Worker extends cis5550.generic.Worker {
     	System.err.println("Syntax: Worker <port> <masterIP:port>");
     	System.exit(1);
     }
-
+    
     int port = Integer.parseInt(args[0]);
     String server = args[1];
 	  startPingThread(server, ""+port, port);
@@ -158,7 +158,7 @@ class Worker extends cis5550.generic.Worker {
     			Row row = scannedTable.next();
     			String accumulatedResult = zeroEle;
     			for(String c: row.columns()) {
-    				accumulatedResult = deserializedLambda.op(row.get(c),accumulatedResult);
+    				accumulatedResult = deserializedLambda.op(accumulatedResult,row.get(c));
     			}
     			kvs.put(outputTableName,row.key() ,"col", accumulatedResult);
     		}
@@ -641,7 +641,7 @@ class Worker extends cis5550.generic.Worker {
     			Row row = scannedTable.next();
     			String accumulatedResult = zeroEle;
     			for(String c: row.columns()) {
-    				accumulatedResult = deserializedLambda.op(row.get(c),accumulatedResult);
+    				accumulatedResult = deserializedLambda.op(accumulatedResult, row.get(c));
     			}
     			//ensuring that the accumulated result of all workers go to the same work during the aggregate step
     			
@@ -684,7 +684,7 @@ class Worker extends cis5550.generic.Worker {
     	if(scannedTable!=null) {
     		while(scannedTable.hasNext()) {
     			Row row = scannedTable.next();
-    			accumulatedResult = deserializedLambda.op(row.get("value"),accumulatedResult);
+    			accumulatedResult = deserializedLambda.op(accumulatedResult, row.get("value"));
     		}
     		if(!accumulatedResult.equals(zeroEle))
     			kvs.put(outputTableName ,"opRow", "value", accumulatedResult);

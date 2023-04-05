@@ -236,7 +236,7 @@ class HTTPServer implements Runnable{
                         }
                         else if(path_split[j].length() > 1 && path_split[j].charAt(0) == ':')
                         {
-                            params.put(path_split[j].substring(1), url_split[j]);
+                            params.put(path_split[j].substring(1), java.net.URLDecoder.decode(url_split[j], StandardCharsets.UTF_8));
                         }
                     }
                 }
