@@ -21,11 +21,7 @@ public class Crawler {
 			return;
 		}
 		context.output("OK");
-		String[] p = URLParser.parseURL(args[0]);
-		if (p[2] == null) {
-			p[2] = "80";
-		}
-		String seed = p[0] + "://" + p[1] + ":" + p[2] + p[3];
+		String seed = normalizeURL("", args[0]);
 		FlameRDD urlQueue = context.parallelize(Arrays.asList(seed));
 		context.getKVS().persist("crawl");
 		String kvsMasterAddr = context.getKVS().getMaster();
@@ -95,7 +91,7 @@ public class Crawler {
 					if (lastAccessTimeBytes != null) {
 						long lastAccessTime = Long.parseLong(new String(lastAccessTimeBytes));
 						if (System.currentTimeMillis() - lastAccessTime < 1000) {
-							// return Arrays.asList(new String[] {urlString});
+							return Arrays.asList(new String[] {urlString});
 						}
 					}
 				} catch (Exception e) {
@@ -141,6 +137,7 @@ public class Crawler {
 					return new ArrayList<String>();
 				}
 				HttpURLConnection connGet = (HttpURLConnection) url.openConnection();
+				connGet.setRequestProperty("User-Agent", "cis5550-crawler");
 				connGet.setRequestMethod("GET");
 				try {
 					kvs.put("hosts", hostKey, "lastAccessTime", String.valueOf(System.currentTimeMillis()));
@@ -159,7 +156,7 @@ public class Crawler {
 				List<String> newURLs = extractURLs(contentStr, urlString);
 				return newURLs;
 			});
-			// Thread.sleep(1200);
+			Thread.sleep(1200);
 		}
 	}
 	
@@ -219,7 +216,8 @@ public class Crawler {
 				return baseP[0] + "://" + baseP[1] + ":" + baseP[2] + urlP[3].substring(0, end);
 			}
 			// relative 
-			return baseP[0] + "://" + baseP[1] + ":" + baseP[2] + cut(baseP[3], urlP[3]) + urlP[3].substring(0, end);
+			String[] cutRes = cut(baseP[3], urlP[3].substring(0, end));
+			return baseP[0] + "://" + baseP[1] + ":" + baseP[2] + cutRes[0] + "/" + cutRes[1];
 		}
 		// external url
 		if (!urlP[0].equals("http") && !urlP[0].equals("https")) {
@@ -238,23 +236,28 @@ public class Crawler {
 		}
 		return urlP[0] + "://" + urlP[1] + ":" + urlP[2] + urlP[3];
 	}
-	
-	public static String cut(String base, String url) {
+
+	public static String[] cut(String base, String url) {
+		String[] res = new String[2];
 		base = cutToLastSlash(base);
 		int dotdot = url.indexOf("../");
 		while (dotdot >= 0) {
 			base = cutToLastSlash(base);
-			dotdot = url.indexOf("../", dotdot + 3);
+			url = url.substring(dotdot + 3);
+			dotdot = url.indexOf("../");
 		}
-		return null;
+		res[0] = base;
+		res[1] = url;
+		return res;
 	}
 	
 	public static String cutToLastSlash(String url) {
+		System.out.println(url);
 		int i = url.length() - 1;
 		while (url.charAt(i) != '/') {
 			i--;
 		}
-		return url.substring(0, i + 1);
+		return url.substring(0, i);
 	}
 
 	public static boolean parseRobotTxt(String robotTxt, String url) {

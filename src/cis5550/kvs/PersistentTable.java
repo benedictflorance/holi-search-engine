@@ -100,26 +100,31 @@ public class PersistentTable implements Table {
 		tableFile.delete();
 	}
 	public synchronized void collectGarbage() throws Exception {
-			byte[] lf = {10};
 			File newTable = new File(dir + "/" + id + ".temp");
-			RandomAccessFile newLog = new RandomAccessFile(newTable, "rw");
-			Map<String, Long> newIndex = new ConcurrentHashMap<String, Long>();
-			for (String rKey : index.keySet()) {
-				long pos = index.get(rKey);
-				log.seek(pos);
-				Row r = Row.readFrom(log);
-				byte[] rowContent = r.toByteArray();
-				long offset = newLog.length();
-			    newLog.write(rowContent);
-				newLog.write(lf);
-				newIndex.put(r.key, offset);
+			try {
+				byte[] lf = {10};
+				RandomAccessFile newLog = new RandomAccessFile(newTable, "rw");
+				Map<String, Long> newIndex = new ConcurrentHashMap<String, Long>();
+				for (String rKey : index.keySet()) {
+					long pos = index.get(rKey);
+					log.seek(pos);
+					Row r = Row.readFrom(log);
+					byte[] rowContent = r.toByteArray();
+					long offset = newLog.length();
+				    newLog.write(rowContent);
+					newLog.write(lf);
+					newIndex.put(r.key, offset);
+				}
+				this.log.close();
+				this.tableFile.delete();
+				this.tableFile = newTable;
+				this.log = newLog;
+				this.index = newIndex;
+				File rename = new File(dir + "/" + id + ".table");
+				newTable.renameTo(rename);
+			} catch (Exception e) {
+				newTable.delete();
+				return;
 			}
-			this.log.close();
-			this.tableFile.delete();
-			this.tableFile = newTable;
-			this.log = newLog;
-			this.index = newIndex;
-			File rename = new File(dir + "/" + id + ".table");
-			newTable.renameTo(rename);
 	}
 }

@@ -132,7 +132,7 @@ public class Worker extends cis5550.generic.Worker {
 		put("/rename/:table", (req, res) -> {
 			updateAccessTime();
 			if (!tables.containsKey(req.params("table"))) {
-				res.status(404, "Nor Found");
+				res.status(404, "Not Found");
 				return "Not Found";
 			}
 			Table t = tables.get(req.params("table"));
