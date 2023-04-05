@@ -1,13 +1,14 @@
-/*
 package cis5550.kvs;
 import static cis5550.webserver.Server.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -27,7 +28,7 @@ public class Worker extends cis5550.generic.Worker {
 	
 	public Worker() {
 		tables = new ConcurrentHashMap<String, Table>();
-		lastReq = System.currentTimeMillis(); 
+		lastReq = System.currentTimeMillis();
 	}
 	
 	public String readID(File idFile) {
@@ -91,7 +92,7 @@ public class Worker extends cis5550.generic.Worker {
 		return null;
 	}
 	
-	public void definePut() {
+	public void definePut() throws Exception {
 		put("/data/:table/:row/:col", (req, res) -> {
 			updateAccessTime();
 			return putTable(req, res);
@@ -139,7 +140,7 @@ public class Worker extends cis5550.generic.Worker {
 			t.setKey(req.body());
 			return "OK";
 		});
-		
+
 		put("/delete/:table", (req, res) -> {
 			updateAccessTime();
 			if (!tables.containsKey(req.params("table"))) {
@@ -368,7 +369,16 @@ public class Worker extends cis5550.generic.Worker {
 			Worker wk = new Worker();
 			wk.dir = args[1];
 			File idFile = new File(wk.dir + "/id");
-			wk.id = idFile.exists()? wk.readID(idFile) : wk.makeID();
+			if (idFile.exists()) {
+				wk.id = wk.readID(idFile);
+			} else {
+				wk.id = wk.makeID();
+				new File(wk.dir).mkdir();
+				idFile = new File(wk.dir + "/id");
+				FileWriter fw = new FileWriter(idFile);
+				fw.write(wk.id);
+				fw.close();
+			}
 			wk.recover();
 			int port = Integer.parseInt(args[0]);
 			port(port);
@@ -382,9 +392,9 @@ public class Worker extends cis5550.generic.Worker {
 		}
 	}
 }
-*/
-package cis5550.kvs;
 
+/*
+ * package cis5550.kvs;
 import static cis5550.webserver.Server.port;
 
 import java.io.ByteArrayInputStream;
@@ -1568,5 +1578,6 @@ public class Worker extends cis5550.generic.Worker{
       }
 
 }
+*/
 
 

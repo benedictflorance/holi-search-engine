@@ -95,7 +95,7 @@ public class Crawler {
 					if (lastAccessTimeBytes != null) {
 						long lastAccessTime = Long.parseLong(new String(lastAccessTimeBytes));
 						if (System.currentTimeMillis() - lastAccessTime < 1000) {
-							return Arrays.asList(new String[] {urlString});
+							// return Arrays.asList(new String[] {urlString});
 						}
 					}
 				} catch (Exception e) {
@@ -159,7 +159,7 @@ public class Crawler {
 				List<String> newURLs = extractURLs(contentStr, urlString);
 				return newURLs;
 			});
-			Thread.sleep(1200);
+			// Thread.sleep(1200);
 		}
 	}
 	

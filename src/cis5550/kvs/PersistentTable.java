@@ -1,7 +1,6 @@
 package cis5550.kvs;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Map;
@@ -15,14 +14,15 @@ public class PersistentTable implements Table {
 	String id;
 	String dir;
 	
-	public PersistentTable(String dir, String tKey) throws FileNotFoundException {
+	public PersistentTable(String dir, String tKey) throws IOException {
 		this.index = new ConcurrentHashMap<String, Long>();
 		this.tableFile = new File(dir + "/" + tKey + ".table");
+		tableFile.createNewFile();
 		this.log = new RandomAccessFile(tableFile, "rw");
 		this.id = tKey;
 		this.dir = dir;
 	}
-	
+
 	public PersistentTable(String dir, File logFile, String tKey) throws Exception {
 		index = new ConcurrentHashMap<String, Long>();
 		this.tableFile = logFile;
@@ -60,7 +60,7 @@ public class PersistentTable implements Table {
 		}
 	}
 
-	public Row getRow(String rKey) throws Exception {
+	public synchronized Row getRow(String rKey) throws Exception {
 		Row r = null;
 		try {
 			if (!index.containsKey(rKey)) {
@@ -70,6 +70,7 @@ public class PersistentTable implements Table {
 			log.seek(pos);
 			r = Row.readFrom(log);
 		} catch (Exception e) {
+			System.out.println(rKey);
 			e.printStackTrace();
 		}
 		return r;
