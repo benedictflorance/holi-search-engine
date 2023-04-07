@@ -1,3 +1,6 @@
 /bin/
 .DS_Store
 *.jar
+*.class
+src/worker1/id
+*.table
