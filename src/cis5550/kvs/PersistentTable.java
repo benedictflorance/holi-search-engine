@@ -60,6 +60,17 @@ public class PersistentTable implements Table {
 		}
 	}
 
+
+	public synchronized Row getRowForDisplay(String rKey) throws Exception {
+		if (!index.containsKey(rKey)) {
+			return null;
+		}
+		Row r = new Row(rKey);
+		long pos = index.get(rKey);
+		r.put("pos", String.valueOf(pos));
+		return r;
+	}
+
 	public synchronized Row getRow(String rKey) throws Exception {
 		Row r = null;
 		try {
@@ -70,7 +81,6 @@ public class PersistentTable implements Table {
 			log.seek(pos);
 			r = Row.readFrom(log);
 		} catch (Exception e) {
-			System.out.println(rKey);
 			e.printStackTrace();
 		}
 		return r;
@@ -92,8 +102,15 @@ public class PersistentTable implements Table {
 		return id;
 	}
 	
-	public void setKey(String tKey) {
+	public synchronized boolean rename(String tKey) throws IOException {
+		if (tKey.equals(id)) {
+			// Do nothing if new key is the same as the old key.
+			return true;
+		}
 		id = tKey;
+		File newTable = new File(dir + "/" + id + ".table");
+		
+		return tableFile.renameTo(newTable);
 	}
 	public synchronized void delete() throws IOException {
 		log.close();

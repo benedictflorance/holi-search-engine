@@ -35,6 +35,9 @@ public class MemTable implements Table {
 	public Row getRow(String rKey) {
 		return data.get(rKey);
 	}
+	public Row getRowForDisplay(String rKey) {
+		return getRow(rKey);
+	}
 	public boolean persistent() {
 		return false;
 	}
@@ -47,8 +50,9 @@ public class MemTable implements Table {
 	public String getKey() {
 		return id;
 	}
-	public void setKey(String tKey) {
+	public boolean rename(String tKey) {
 		id = tKey;
+		return true;
 	}
 	public synchronized void delete() throws IOException {
 		data.clear();
