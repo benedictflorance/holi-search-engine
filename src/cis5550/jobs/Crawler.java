@@ -35,7 +35,7 @@ public class Crawler {
 		String kvsMasterAddr = context.getKVS().getMaster();
 		List<String> blacklist = new ArrayList<String>(Arrays.asList(buildBadURLsList()));
 		// Start crawling
-		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 100000) {
+		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 20000) {
 				urlQueue = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
@@ -84,11 +84,11 @@ public class Crawler {
 		String body = new String();
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			char[] content = new char[4096];
-			int bytesRead = br.read(content, 0, 4096);
+			char[] content = new char[1048576];
+			int bytesRead = br.read(content, 0, 1048576);
 			while (bytesRead != -1) {
 				body += new String(content, 0, bytesRead);
-				bytesRead = br.read(content, 0, 4096);
+				bytesRead = br.read(content, 0, 1048576);
 			}
 			br.close();
 		} catch (Exception e) {
@@ -439,7 +439,7 @@ public class Crawler {
 			HttpURLConnection connRobo = (HttpURLConnection) urlRobo.openConnection();
 			connRobo.setRequestProperty("User-Agent", "cis5550-crawler");
 			connRobo.setRequestMethod("GET");
-			connRobo.setConnectTimeout(10000);
+			connRobo.setConnectTimeout(30000);
 			connRobo.setReadTimeout(30000);
 			connRobo.connect();
 			responseCode = connRobo.getResponseCode();
@@ -504,7 +504,7 @@ public class Crawler {
 			HttpURLConnection.setFollowRedirects(false);
 			connHead.setRequestProperty("User-Agent", "cis5550-crawler");
 			connHead.setRequestMethod("HEAD");
-			connHead.setConnectTimeout(10000);
+			connHead.setConnectTimeout(30000);
 			connHead.setReadTimeout(30000);
 			// Update last access time
 			kvs.put("hosts", hostKey, "lastAccessTime", String.valueOf(System.currentTimeMillis()));
@@ -565,7 +565,7 @@ public class Crawler {
 			HttpURLConnection connGet = (HttpURLConnection) url.openConnection();
 			connGet.setRequestProperty("User-Agent", "cis5550-crawler");
 			connGet.setRequestMethod("GET");
-			connGet.setConnectTimeout(10000);
+			connGet.setConnectTimeout(30000);
 			connGet.setReadTimeout(30000);
 			// Update access time.
 			kvs.put("hosts", hostKey, "lastAccessTime", String.valueOf(System.currentTimeMillis()));
