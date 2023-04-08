@@ -46,7 +46,6 @@ public class PersistentTable implements Table {
 			while (log.getFilePointer() != log.length()) {
 				long offset = log.getFilePointer();
 				Row r = Row.readFrom(log);
-				r.values.clear();
 				index.put(r.key, offset);
 			}
 		} catch (Exception e) {
@@ -57,12 +56,9 @@ public class PersistentTable implements Table {
 	public synchronized void putRow(String rKey, Row row) throws Exception {
 		try {
 			long offset = log.length();
-			byte[] rowContent = row.toByteArray();
 			log.seek(offset);
-			log.write(rowContent);
-			byte[] lf = {10};
-			log.write(lf);
-			row.values.clear();
+			log.write(row.toByteArray());
+			log.writeBytes("\n");
 			index.put(rKey, offset);
 		} catch (Exception e) {
 			e.printStackTrace();

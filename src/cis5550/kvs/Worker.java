@@ -367,8 +367,8 @@ public class Worker extends cis5550.generic.Worker {
 		public void run() {
 			while (true) {
 				try {
-					sleep(10000);
-					if (System.currentTimeMillis() - lastReq > 10000) {
+					sleep(60000);
+					if (System.currentTimeMillis() - lastReq > 60000) {
 						for (String tKey : tables.keySet()) {
 							tables.get(tKey).collectGarbage();
 						}

@@ -25,11 +25,9 @@ public class MemTable implements Table {
 	public synchronized void putRow(String rKey, Row row) throws IOException {
 		data.put(rKey, row);
 		long offset = log.length();
-		byte[] rowContent = row.toByteArray();
 		log.seek(offset);
-		log.write(rowContent);
-		byte[] lf = {10};
-		log.write(lf);
+		log.write(row.toByteArray());
+		log.writeBytes("\n");
 	}
 	public Row getRow(String rKey) {
 		return data.get(rKey);
@@ -59,18 +57,13 @@ public class MemTable implements Table {
 		tableFile.delete();
 	}
 	public synchronized void collectGarbage() throws IOException {
-		log.close();
-		tableFile.delete();
-		this.tableFile = new File(dir + "/" + id + ".table");
-		this.log = new RandomAccessFile(tableFile, "rw");
+		log.setLength(0);
 		for (String tKey : data.keySet()) {
 			Row r = data.get(tKey);
 			long offset = log.length();
-			byte[] rowContent = r.toByteArray();
 			log.seek(offset);
-			log.write(rowContent);
-			byte[] lf = {10};
-			log.write(lf);
+			log.write(r.toByteArray());
+			log.writeBytes("\n");
 		}
 	}
 	
