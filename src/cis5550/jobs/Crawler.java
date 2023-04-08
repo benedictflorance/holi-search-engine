@@ -4,10 +4,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 import cis5550.flame.*;
 import cis5550.kvs.KVSClient;
@@ -21,209 +22,62 @@ public class Crawler {
 			context.output("No seed found");
 			return;
 		}
-		context.output("OK");
 		String seed = normalizeURL("", args[0]);
-		FlameRDD urlQueue = context.parallelize(Arrays.asList(seed));
+		FlameRDD urlQueue;
 		KVSClient kvsClient = context.getKVS();
-		kvsClient.persist("crawl");
-		String kvsMasterAddr = context.getKVS().getMaster();
-		String proto = "http.*:\\/\\/";
-		String[] badURLs = {proto + ".*/cgi-bin/.*",
-							proto + ".*\\.appfinders\\.com*",
-							proto + "[www.]*youtube\\.com*",
-							proto + "[www.]*flickr\\.com*"};
-		List<String> blacklist = new ArrayList<String>(Arrays.asList(badURLs));
-		// Start crawling
-		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 10000) {
-			urlQueue = urlQueue.flatMap(urlString -> {
-				KVSClient kvs = new KVSClient(kvsMasterAddr);
-				String rowKey = Hasher.hash(urlString);
-				try {
-					if (kvs.existsRow("crawl", rowKey)) {
-						// If we have crawled this URL, do nothing
-						return new ArrayList<String>();
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-					return new ArrayList<String>(Arrays.asList(urlString));
-				}
-				// Filter bad url
-				String[] host = URLParser.parseURL(urlString);
-				if (host[0] == null || host[1] == null) {
-					return new ArrayList<String>();
-				}
-				// Register host
-				String hostKey = Hasher.hash(host[1]);
-				try {
-					kvs.get("blacklist", hostKey, "");
-					kvs.put("hosts", hostKey, "url", host[1]);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				int responseCode = 0;
-				URL url = new URL(urlString);
-				try {
-					// Check if robot.txt has been requested for this host.
-					byte[] robotBytes = kvs.get("hosts", hostKey, "robots.txt");
-					if (robotBytes != null ) {
-						// robots.txt has been requested
-						String robot = new String(robotBytes);
-						if (!robot.equals("FALSE")) {
-							// This host has a robots.txt
-							if (!parseRobotTxt(robot, host[3])) {
-								// robots.txt forbids crawling of this page.
-								return new ArrayList<String>();
-							}
-							// if robot.txt == "FALSE", we have already verified that this host does not have a robots.txt, so we can crawl freely.
-						} 
-					} else {
-						//robot.txt has not been requested from this host. Request it.
-						URL urlRobo = new URL(host[0] + "://" + host[1] + "/robots.txt");
-						HttpURLConnection connRobo = (HttpURLConnection) urlRobo.openConnection();
-						connRobo.setRequestProperty("User-Agent", "cis5550-crawler");
-						connRobo.setRequestMethod("GET");
-						connRobo.setConnectTimeout(10000);
-						connRobo.connect();
-						responseCode = connRobo.getResponseCode();
-						if (responseCode != 200) {
-							// The host has no robots.txt. Mark as FALSE so that future queries know.
-							kvs.put("hosts", hostKey, "robots.txt", "FALSE");
-						} else {
-							// This host has a robots.txt
-							String robot = readBody(connRobo);
-							if (robot != null) {
-								// Save robots.txt to KVS
-								kvs.put("hosts", hostKey, "robots.txt", robot.getBytes());
-								if (!parseRobotTxt(robot, host[3])) {
-									// robots.txt forbids crawling of this page.
-									return new ArrayList<String>();
-								}
-							} else {
-								// The host has no robots.txt. Mark as FALSE so that future queries know.
-								kvs.put("hosts", hostKey, "robots.txt", "FALSE");
-							}
-						}
-					}
-				} catch (UnknownHostException uhe) {
-					return new ArrayList<String>();
-				} catch (javax.net.ssl.SSLHandshakeException sslhse) {
-					return new ArrayList<String>();
-				} catch (Exception e) {
-					System.out.println("Exception caused by " + urlString);
-					e.printStackTrace();
-					return new ArrayList<String>();
-				}
-				// Check last access time
-				try {
-					byte[] lastAccessTimeBytes = kvs.get("hosts", hostKey, "lastAccessTime");
-					if (lastAccessTimeBytes != null) {
-						long lastAccessTime = Long.parseLong(new String(lastAccessTimeBytes));
-						if (System.currentTimeMillis() - lastAccessTime < 1000) {
-							// If we have accessed this host within 1 second, put this page to the back of the queue to crawl later.
-							return Arrays.asList(new String[] {urlString});
-						}
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-					// If problems occur in checking last access time, crawl anyway???
-					// return Arrays.asList(new String[] {urlString});
-				}
-				// Send a HEAD request with the URL
-				HttpURLConnection connHead = (HttpURLConnection) url.openConnection();
-				HttpURLConnection.setFollowRedirects(false);
-				connHead.setRequestProperty("User-Agent", "cis5550-crawler");
-				connHead.setRequestMethod("HEAD");
-				connHead.setConnectTimeout(10000);
-				// Update last access time
-				try {
-					kvs.put("hosts", hostKey, "lastAccessTime", String.valueOf(System.currentTimeMillis()));
-					connHead.connect();
-					// Register response code of HEAD request, also register meta-information of the page.
-					responseCode = connHead.getResponseCode();
-				} catch (UnknownHostException uhe) {
-					return new ArrayList<String>();
-				} catch (javax.net.ssl.SSLHandshakeException sslhse) {
-					return new ArrayList<String>();
-				} catch (Exception e) {
-					System.out.println("Exception caused by " + urlString);
-					e.printStackTrace();
-					return new ArrayList<String>();
-				}
-				Row row = new Row(rowKey);
-				try {
-					row.put("responseCode",String.valueOf(responseCode));
-					row.put("url", urlString);
-					String contentType = connHead.getContentType();
-					if (contentType != null) {
-						row.put("contentType", contentType);
-					}
-					int contentLength = connHead.getContentLength();
-				    row.put("length", String.valueOf(contentLength));
-					
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				// If the response is a redirect, get the destination from body and put it to the back of the queue.
-				if (responseCode == 301 || responseCode == 302 || responseCode == 303 || responseCode == 307 || responseCode == 308) {
-					kvs.putRow("crawl", row);
-					String loc = connHead.getHeaderField("Location");
-					String normalized = normalizeURL(urlString, loc);
-					if (normalized == null) {
-						return new ArrayList<String>();
-					}
-					return Arrays.asList(new String[] {normalized});
-				}
-				// If the response is not 200 or if the content is not text/html, do nothing.
-				String contentType = connHead.getContentType();
-				if (contentType == null) {
-					kvs.putRow("crawl", row);
-					return new ArrayList<String>();
-				}
-				if (responseCode != 200 || !contentType.trim().toLowerCase().startsWith("text/html")) {
-					kvs.putRow("crawl", row);
-					return new ArrayList<String>();
-				}
-				// See if we can filter out pages that are not in English
-				String contentLanguage = connHead.getHeaderField("Content-Language");
-				if (contentLanguage != null) {
-					if (!contentLanguage.toLowerCase().contains("en")) {
-						return new ArrayList<String>();
-					}
-				}
-				// Send a GET request with the URL
-				HttpURLConnection connGet = (HttpURLConnection) url.openConnection();
-				connGet.setRequestProperty("User-Agent", "cis5550-crawler");
-				connGet.setRequestMethod("GET");
-				connHead.setConnectTimeout(10000);
-				// Update access time.
-				try {
-					kvs.put("hosts", hostKey, "lastAccessTime", String.valueOf(System.currentTimeMillis()));
-					connGet.connect();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				// Check again if the response code is 200 and if the content type is still text/html, even though it's unlikely that they have changed within such a short amount of time.
-				responseCode = connGet.getResponseCode();
-				row.put("responseCode",String.valueOf(responseCode));
-				contentType = connGet.getContentType();
-				if (contentType == null) {
-					kvs.putRow("crawl", row);
-					return new ArrayList<String>();
-				}
-				if (responseCode != 200 || !contentType.trim().toLowerCase().startsWith("text/html")) {
-					return new ArrayList<String>();
-				}
-				// Finally, read the content of the page and put it to KVS.
-				String contentStr = readBody(connGet);
-				if (contentStr != null) {
-					row.put("page", contentStr);
-				}
-				kvs.putRow("crawl", row);
-				// Extract more URLs from this page and put them to the back of the queue.
-				List<String> newURLs = extractURLs(contentStr, urlString, blacklist);
-				return newURLs;
-			});
+		try {
+			urlQueue = context.parallelize(Arrays.asList(seed));
+			kvsClient.persist("crawl");
+		} catch (Exception e) {
+			context.output("KVStore not working.");
+			return;
 		}
+		String kvsMasterAddr = context.getKVS().getMaster();
+		List<String> blacklist = new ArrayList<String>(Arrays.asList(buildBadURLsList()));
+		// Start crawling
+		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 100000) {
+				urlQueue = urlQueue.flatMap(urlString -> {
+					System.out.println("Crawling " + urlString);
+					KVSClient kvs = new KVSClient(kvsMasterAddr);
+					String rowKey = Hasher.hash(urlString);
+					if (URLCrawled(rowKey, kvs)) {
+						return new ArrayList<String>();
+					}
+					// Filter bad url
+					String[] urlParts = URLParser.parseURL(urlString);
+					if (urlParts[0] == null || urlParts[1] == null) {
+						return new ArrayList<String>();
+					}
+					String hostKey = Hasher.hash(urlParts[1]);
+					// Register host
+					try {
+						kvs.put("hosts", hostKey, "url", urlParts[1]);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					URL url;
+					try {
+						url = new URL(urlString);
+					} catch (Exception e) {
+						return new ArrayList<String>();
+					}
+					if (!robotPermits(hostKey, urlParts, urlString, kvs)) {
+						return new ArrayList<String>();
+					}
+					if (!accessTimeLimitPassed(hostKey, kvs)) {
+						return Arrays.asList(new String[] {urlString});
+					}
+					Row row = new Row(rowKey);
+					System.out.println("Send HEAD for " + urlString);
+					List<String> headRet = sendHead(url, hostKey, rowKey, urlString, kvs, row);
+					if (headRet != null) {
+						return headRet;
+					}
+					System.out.println("Send GET for " + urlString);
+					return sendGet(url, hostKey, rowKey, urlString, kvs, row,blacklist);
+				});
+		}
+		context.output("OK");
 	}
 	
 	public static String readBody(HttpURLConnection conn) {
@@ -238,24 +92,49 @@ public class Crawler {
 			}
 			br.close();
 		} catch (Exception e) {
+			System.out.println("Read failed for URL: " + conn.getURL());
+			e.printStackTrace();
 			return null;
 		}
 		return body;
-		
 	}
 	
-	public static List<String> extractURLs(String content, String baseURL, List<String> blacklist) {
-		System.out.println("Downloaded page: " + baseURL);
-		if (content == null) {
-			return new ArrayList<String>();
+	public static String readBody(HttpURLConnection conn, int length) {
+		char[] content = new char[length];
+		int bytes_read = 0;
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			while (bytes_read < length) {
+				int n = br.read(content, 0, length);
+				if (n == -1) {
+					break;
+				}
+				bytes_read += n;
+			}
+			br.close();
+		} catch (Exception e) {
+			System.out.println("Read failed for URL: " + conn.getURL());
+			e.printStackTrace();
+			return null;
 		}
+		return new String(content, 0, bytes_read);
+	}
+	
+	
+	public static Set<String> extractURLs(String content, String baseURL, List<String> blacklist) {
+		System.out.println("Downloaded page: " + baseURL);
 		java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("<\\s*?a\\s+[^>]*href=\\s*?\"(.*?)\".*?>", java.util.regex.Pattern.CASE_INSENSITIVE);
 		java.util.regex.Matcher matcher = pattern.matcher(content);
-		List<String> newURLs = new ArrayList<String>();
+		Set<String> newURLs = new HashSet<String>();
 	    while(matcher.find()) {
 	    	String newURL = matcher.group(1);
 	    	String newURLNorm = normalizeURL(baseURL, newURL);
 	    	if (newURLNorm == null) {
+	    		continue; 
+	    	}
+	    	try {
+	    		new URL(newURLNorm);
+	    	} catch (Exception e) {
 	    		continue;
 	    	}
 	    	if (isBlacklisted(newURLNorm, blacklist)) {
@@ -400,7 +279,7 @@ public class Crawler {
 		return uri.substring(0, i);
 	}
 
-	public static boolean parseRobotTxt(String robotTxt, String url) {
+	public static boolean parseRobotsTxt(String robotTxt, String url) {
 		int agent = robotTxt.indexOf("User-agent: cis5550-crawler");
 		if (agent >= 0) {
 			java.io.BufferedReader reader = new BufferedReader(new java.io.StringReader(robotTxt.substring(agent + 28)));
@@ -454,7 +333,8 @@ public class Crawler {
 				}
 				reader.close();
 			} catch (IOException e) {
-				
+				e.printStackTrace();
+				return true;
 			}
 			return true;
 		} 
@@ -479,7 +359,8 @@ public class Crawler {
 					continue;
 				}
 				int disallow = line.indexOf("Disallow:");
-				if (disallow >= 0) { // There exists a disallow rule
+				if (disallow >= 0) {
+					// There exists a disallow rule
 					String disallowStr = line.substring(disallow + 9).trim();
 					if (disallowStr.length() == 0) {
 						line = reader.readLine();
@@ -516,8 +397,225 @@ public class Crawler {
 			}
 			reader.close();
 		} catch (Exception e) {
-			
+			e.printStackTrace();
+			return true;
 		}
 		return true;
 	}
+	
+	public static boolean URLCrawled(String urlHash, KVSClient kvs) {
+		try {
+			if (kvs.existsRow("crawl", urlHash)) {
+				return true;
+			}
+			return false;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+	
+	public static boolean robotPermits(String hostKey, String[] urlParts, String wholeURL, KVSClient kvs) {
+		try {
+			int responseCode;
+			// Check if robot.txt has been requested for this host.
+			byte[] robotBytes = kvs.get("hosts", hostKey, "robots.txt");
+			if (robotBytes != null ) {
+				// robots.txt has been requested
+				String robot = new String(robotBytes);
+				if (robot.equals("FALSE")) {
+					// if robot.txt == "FALSE", we have already verified that this host does not have a robots.txt, so we can crawl freely.
+					return true;
+				}
+				// This host has a robots.txt
+				if (!parseRobotsTxt(robot, urlParts[3])) {
+					// robots.txt forbids crawling of this page.
+					return false;
+				}
+				return true;
+			}
+			//robot.txt has not been requested from this host. Request it.
+			URL urlRobo = new URL(urlParts[0] + "://" + urlParts[1] + "/robots.txt");
+			HttpURLConnection connRobo = (HttpURLConnection) urlRobo.openConnection();
+			connRobo.setRequestProperty("User-Agent", "cis5550-crawler");
+			connRobo.setRequestMethod("GET");
+			connRobo.setConnectTimeout(10000);
+			connRobo.setReadTimeout(30000);
+			connRobo.connect();
+			responseCode = connRobo.getResponseCode();
+			if (responseCode != 200) {
+				// The host has no robots.txt. Mark as FALSE so that future queries know.
+				kvs.put("hosts", hostKey, "robots.txt", "FALSE");
+				return true;
+			}
+			int roboLength = connRobo.getContentLength();
+			if (roboLength > 1024 * 1024 * 512) {
+				kvs.put("hosts", hostKey, "robots.txt", "FALSE");
+				return true;
+			}
+			// This host has a robots.txt
+			String robot = readBody(connRobo);
+			if (robot == null) {
+				// The host has no robots.txt. Mark as FALSE so that future queries know.
+				kvs.put("hosts", hostKey, "robots.txt", "FALSE");
+				return true;
+			}
+			// Save robots.txt to KVS
+			kvs.put("hosts", hostKey, "robots.txt", robot.getBytes());
+			if (!parseRobotsTxt(robot, urlParts[3])) {
+				System.out.println("parsed Robots.txt, no");
+				// robots.txt forbids crawling of this page.
+				return false;
+			}
+			return true;
+		}  catch (Exception e) {
+			try {
+				kvs.put("hosts", hostKey, "robots.txt", "FALSE");
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			System.out.println("Exception caused by " + wholeURL);
+			e.printStackTrace();
+			return false;
+		}
+	}
+	public static boolean accessTimeLimitPassed(String hostKey, KVSClient kvs) {
+		try {
+			byte[] lastAccessTimeBytes = kvs.get("hosts", hostKey, "lastAccessTime");
+			if (lastAccessTimeBytes == null) {
+				return true;
+			}
+			long lastAccessTime = Long.parseLong(new String(lastAccessTimeBytes));
+			if (System.currentTimeMillis() - lastAccessTime < 1000) {
+				// If we have accessed this host within 1 second, put this page to the back of the queue to crawl later.
+				return false;
+			}
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+	// Returns null if we can proceed to GET
+	public static List<String> sendHead(URL url, String hostKey, String rowKey, String urlString, KVSClient kvs, Row row) {
+		int responseCode;
+		try {
+			HttpURLConnection connHead = (HttpURLConnection) url.openConnection();
+			HttpURLConnection.setFollowRedirects(false);
+			connHead.setRequestProperty("User-Agent", "cis5550-crawler");
+			connHead.setRequestMethod("HEAD");
+			connHead.setConnectTimeout(10000);
+			connHead.setReadTimeout(30000);
+			// Update last access time
+			kvs.put("hosts", hostKey, "lastAccessTime", String.valueOf(System.currentTimeMillis()));
+			connHead.connect();
+			// Register response code of HEAD request, also register meta-information of the page.
+			responseCode = connHead.getResponseCode();
+			row.put("responseCode",String.valueOf(responseCode));
+			row.put("url", urlString);
+			 // If the response is a redirect, get the destination from body and put it to the back of the queue.
+			if (responseCode == 301 || responseCode == 302 || responseCode == 303 || responseCode == 307 || responseCode == 308) {
+				kvs.putRow("crawl", row);
+				String loc = connHead.getHeaderField("Location");
+				String normalized = normalizeURL(urlString, loc);
+				if (normalized == null) {
+					return new ArrayList<String>();
+				}
+				return Arrays.asList(new String[] {normalized});
+			}
+			// If the response is not 200 or if the content is not text/html, do nothing.
+			if (responseCode != 200) {
+				kvs.putRow("crawl", row);
+				return new ArrayList<String>();
+			}
+			String contentType = connHead.getContentType();
+			if (contentType == null) {
+				kvs.putRow("crawl", row);
+				return new ArrayList<String>();
+			}
+			row.put("contentType", contentType);
+			if (!contentType.trim().toLowerCase().startsWith("text/html")) {
+				kvs.putRow("crawl", row);
+				return new ArrayList<String>();
+			}
+			int contentLength = connHead.getContentLength();
+			row.put("length", String.valueOf(contentLength));
+			if (contentLength > 1024 * 1024 * 512) { // maximum page size: 512 MB
+				kvs.putRow("crawl", row);
+				return new ArrayList<String>();
+			}
+			// See if we can filter out pages that are not in English
+			String contentLanguage = connHead.getHeaderField("Content-Language");
+			if (contentLanguage != null) {
+				if (!contentLanguage.toLowerCase().contains("en")) {
+					return new ArrayList<String>();
+				}
+			}
+			return null;
+		} catch (Exception e) {
+			System.out.println("Exception caused by " + urlString);
+			e.printStackTrace();
+			return new ArrayList<String>();
+		}
+	}
+	
+	public static Set<String> sendGet(URL url, String hostKey, String rowKey, String urlString, KVSClient kvs, Row row, List<String> blacklist) {
+		try {
+			int responseCode;
+			HttpURLConnection connGet = (HttpURLConnection) url.openConnection();
+			connGet.setRequestProperty("User-Agent", "cis5550-crawler");
+			connGet.setRequestMethod("GET");
+			connGet.setConnectTimeout(10000);
+			connGet.setReadTimeout(30000);
+			// Update access time.
+			kvs.put("hosts", hostKey, "lastAccessTime", String.valueOf(System.currentTimeMillis()));
+			connGet.connect();
+			// Check again if the response code is 200 and if the content type is still text/html, even though it's unlikely that they have changed within such a short amount of time.
+			responseCode = connGet.getResponseCode();
+			row.put("responseCode", String.valueOf(responseCode));
+			if (responseCode != 200) {
+				kvs.putRow("crawl", row);
+				return new HashSet<String>();
+			}
+			String contentType = connGet.getContentType();
+			if (contentType == null) {
+				kvs.putRow("crawl", row);
+				return new HashSet<String>();
+			}
+			row.put("contentType", contentType);
+			if (!contentType.trim().toLowerCase().startsWith("text/html")) {
+				kvs.putRow("crawl", row);
+				return new HashSet<String>();
+			}
+			int contentLength = connGet.getContentLength();
+			row.put("length", String.valueOf(contentLength));
+			if (contentLength > 1024 * 1024 * 512) { // maximum page size: 512 MB
+				kvs.putRow("crawl", row);
+				return new HashSet<String>();
+			}
+			// Finally, read the content of the page and put it to KVS.
+			String contentStr = readBody(connGet);
+			if (contentStr == null) {
+				kvs.putRow("crawl", row);
+				return new HashSet<String>();
+			}
+			row.put("page", contentStr);
+			kvs.putRow("crawl", row);
+			// Extract more URLs from this page and put them to the back of the queue.
+			return extractURLs(contentStr, urlString, blacklist);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new HashSet<String>();
+		}
+	}
+	
+	public static String[] buildBadURLsList() {
+		String proto = "http.*:\\/\\/";
+		return new String[] {proto + ".*\\/cgi-bin\\/.*",
+							 proto + ".*\\/javascript\\/.*",
+							 proto + ".*\\.appfinders\\.com*",
+							 proto + "[www.]*youtube\\.com*",
+							 proto + "[www.]*flickr\\.com*"};
+	}
+	
 }

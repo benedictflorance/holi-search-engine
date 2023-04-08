@@ -16,12 +16,11 @@ public class MemTable implements Table {
 	String dir;
 	
 	public MemTable(String tKey, String dir) throws FileNotFoundException {
-		this.data = new ConcurrentHashMap<String, Row>();
-		this.id = tKey;
-		this.tableFile = new File(dir + "/" + tKey + ".table");
-		this.log = new RandomAccessFile(tableFile, "rw");
 		this.id = tKey;
 		this.dir = dir;
+		this.data = new ConcurrentHashMap<String, Row>();
+		this.tableFile = new File(dir + "/" + tKey + ".table");
+		this.log = new RandomAccessFile(tableFile, "rw");
 	}
 	public synchronized void putRow(String rKey, Row row) throws IOException {
 		data.put(rKey, row);
@@ -73,5 +72,9 @@ public class MemTable implements Table {
 			byte[] lf = {10};
 			log.write(lf);
 		}
+	}
+	
+	public Map<String, Row> getAllData() {
+		return data;
 	}
 }

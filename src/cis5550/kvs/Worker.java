@@ -103,14 +103,21 @@ public class Worker extends cis5550.generic.Worker {
 			updateAccessTime();
 			String tKey = req.params("table");
 			if (!tables.containsKey(tKey)) {
-				tables.put(tKey, new PersistentTable(dir, tKey));
+				tables.put(tKey, new PersistentTable(tKey, dir));
 				res.status(200, "OK");
 				return "OK";
 			}
 			if (!tables.get(tKey).persistent()) {
 				// convert to persistent
+				MemTable mt = (MemTable) tables.get(tKey);
+				Map<String, Row> data = mt.getAllData();
+				Table pt =  new PersistentTable(tKey, dir, data);
+				tables.remove(tKey);
+				tables.put(tKey, pt);
+				res.status(200, "OK");
 				return "OK";
 			}
+			// Already persistent
 			res.status(403, "Forbidden");
 			return "403 Forbidden";
 		});
@@ -118,7 +125,7 @@ public class Worker extends cis5550.generic.Worker {
 		put("/data/:table", (req, res) -> {
 			updateAccessTime();
 			if (!tables.containsKey(req.params("table"))) {
-				tables.put(req.params("table"), new PersistentTable(dir, req.params("table")));
+				tables.put(req.params("table"), new MemTable(req.params("table"), dir));
 			}
 			Table t = tables.get(req.params("table"));
 			InputStream bis = new ByteArrayInputStream(req.bodyAsBytes());
@@ -335,7 +342,7 @@ public class Worker extends cis5550.generic.Worker {
 			if (!name[1].equals(".table")) {
 				continue;
 			}
-			Table rec = new PersistentTable(dir, f, name[0]);
+			Table rec = new PersistentTable(name[0], dir, f);
 			tables.put(name[0], rec);
 		}
 	}

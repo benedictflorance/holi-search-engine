@@ -14,22 +14,31 @@ public class PersistentTable implements Table {
 	String id;
 	String dir;
 	
-	public PersistentTable(String dir, String tKey) throws IOException {
+	public PersistentTable(String tKey, String dir) throws IOException {
 		this.index = new ConcurrentHashMap<String, Long>();
 		this.tableFile = new File(dir + "/" + tKey + ".table");
-		tableFile.createNewFile();
+		this.tableFile.createNewFile();
 		this.log = new RandomAccessFile(tableFile, "rw");
 		this.id = tKey;
 		this.dir = dir;
 	}
 
-	public PersistentTable(String dir, File logFile, String tKey) throws Exception {
+	public PersistentTable(String tKey, String dir, File logFile) throws Exception {
 		index = new ConcurrentHashMap<String, Long>();
 		this.tableFile = logFile;
 		this.log = new RandomAccessFile(tableFile, "rw");
 		this.id = tKey;
 		this.dir = dir;
 		recover();
+	}
+	
+	public PersistentTable(String tKey, String dir, Map<String, Row> data) throws Exception {
+		this(tKey, dir);
+		this.index = new ConcurrentHashMap<String, Long>();
+		for (String rKey : data.keySet()) {
+			putRow(rKey, data.get(rKey));
+		}
+		
 	}
 	
 	private synchronized void recover() throws Exception {
