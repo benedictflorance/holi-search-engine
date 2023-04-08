@@ -285,16 +285,22 @@ public class Crawler {
 			java.io.BufferedReader reader = new BufferedReader(new java.io.StringReader(robotTxt.substring(agent + 28)));
 			try {
 				String line = reader.readLine();
+				boolean seenRule = false;
 				while (line != null) {
 					line = line.trim();
 					if (line.length() == 0) {
 						line = reader.readLine();
 						continue;
 					}
+					if (seenRule && line.startsWith("User-agent")) {
+						// Rule ends.
+						break;
+					}
 					if (line.charAt(0) == '#') {
 						line = reader.readLine();
 						continue;
 					}
+					seenRule = true;
 					int disallow = line.indexOf("Disallow:");
 					if (disallow >= 0) { // There exists a disallow rule
 						String disallowStr = line.substring(disallow + 9).trim();
@@ -348,8 +354,13 @@ public class Crawler {
 		java.io.BufferedReader reader = new BufferedReader(new java.io.StringReader(robotTxt.substring(wild + 13)));
 		try {
 			String line = reader.readLine();
+			boolean seenRule = false;
 			while (line != null) {
 				line = line.trim();
+				if (seenRule && line.startsWith("User-agent")) {
+					// Rule ends.
+					break;
+				}
 				if (line.length() == 0) {
 					line = reader.readLine();
 					continue;
@@ -358,6 +369,7 @@ public class Crawler {
 					line = reader.readLine();
 					continue;
 				}
+				seenRule = true;
 				int disallow = line.indexOf("Disallow:");
 				if (disallow >= 0) {
 					// There exists a disallow rule
