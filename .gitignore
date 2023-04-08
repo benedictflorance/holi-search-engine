@@ -3,4 +3,5 @@
 *.jar
 *.class
 src/worker1/id
+worker1/
 *.table
