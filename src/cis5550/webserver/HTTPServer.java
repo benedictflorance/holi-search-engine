@@ -77,7 +77,18 @@ class HTTPServer implements Runnable{
                     long file_size = Files.size(path);
                     if(r.headers.get("range") == null)
                     {
-                        fileContents =  Files.readAllBytes(path);
+//                    	for (File f: file.listFiles()) {
+//                    		System.out.println(f.getName());
+//                    	}
+//                    	System.out.println(file.listFiles());
+//                    	System.out.println(Files.isReadable(path));
+                    	
+                    	if (r.requestURI.equals("/")) {
+                    		Path filePath = Paths.get(path_str + "/index.html");
+                    		fileContents = Files.readAllBytes(filePath);
+                    	} else {
+                            fileContents =  Files.readAllBytes(path);
+                    	}
                         out.print("HTTP/1.1 200 OK" + "\r\n");
                     }
                     else
@@ -106,7 +117,10 @@ class HTTPServer implements Runnable{
                         out.print("Content-Range: bytes " + Long.toString(start) + "-" + Long.toString(end) + "/" + Long.toString(end + 1));
                     }
                     String extension = path_str.substring(path_str.lastIndexOf(".") + 1);
+                    if (r.requestURI.equals("/"))
+                    	extension = "html";
                     String type = extension_types.get(extension) == null ? "application/octet-stream" : extension_types.get(extension);
+                    
                     out.print("Content-Type: " + type + "\r\n");
                     out.print("Server: localhost " + "\r\n");
                     out.flush();
@@ -328,8 +342,12 @@ class HTTPServer implements Runnable{
             error_descriptions.put(501, "Not Implemented");
             error_descriptions.put(505, "HTTP Version not supported");
             extension_types = new HashMap<String, String>();
+            extension_types.put("css", "text/css");
+            extension_types.put("js", "application/javascript");
+            extension_types.put("svg", "image/svg+xml");
             extension_types.put("jpg", "image/jpeg");
             extension_types.put("jpeg", "image/jpeg");
+            extension_types.put("png", "image/png");
             extension_types.put("txt", "text/plain");
             extension_types.put("html", "text/html");
             InputStream in = this.sock.getInputStream();
@@ -482,8 +500,10 @@ class HTTPServer implements Runnable{
                         else
                         {
                             Path path = Paths.get(server.locations.get(r.headers.get("host")) + r.requestURI);
-                            if (Files.exists(path))
+                            if (Files.exists(path)) {
+                            	System.out.println("uri " + r.requestURI);
                                 sendFileResponse(out, stream_out, path, r);
+                            }
                             else
                                 sendError(out, 404);
                         }
