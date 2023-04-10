@@ -16,24 +16,24 @@ public class MemTable implements Table {
 	String dir;
 	
 	public MemTable(String tKey, String dir) throws FileNotFoundException {
-		this.data = new ConcurrentHashMap<String, Row>();
-		this.id = tKey;
-		this.tableFile = new File(dir + "/" + tKey + ".table");
-		this.log = new RandomAccessFile(tableFile, "rw");
 		this.id = tKey;
 		this.dir = dir;
+		this.data = new ConcurrentHashMap<String, Row>();
+		this.tableFile = new File(dir + "/" + tKey + ".table");
+		this.log = new RandomAccessFile(tableFile, "rw");
 	}
 	public synchronized void putRow(String rKey, Row row) throws IOException {
 		data.put(rKey, row);
 		long offset = log.length();
-		byte[] rowContent = row.toByteArray();
 		log.seek(offset);
-		log.write(rowContent);
-		byte[] lf = {10};
-		log.write(lf);
+		log.write(row.toByteArray());
+		log.writeBytes("\n");
 	}
 	public Row getRow(String rKey) {
 		return data.get(rKey);
+	}
+	public Row getRowForDisplay(String rKey) {
+		return getRow(rKey);
 	}
 	public boolean persistent() {
 		return false;
@@ -47,8 +47,9 @@ public class MemTable implements Table {
 	public String getKey() {
 		return id;
 	}
-	public void setKey(String tKey) {
+	public boolean rename(String tKey) {
 		id = tKey;
+		return true;
 	}
 	public synchronized void delete() throws IOException {
 		data.clear();
@@ -56,18 +57,17 @@ public class MemTable implements Table {
 		tableFile.delete();
 	}
 	public synchronized void collectGarbage() throws IOException {
-		log.close();
-		tableFile.delete();
-		this.tableFile = new File(dir + "/" + id + ".table");
-		this.log = new RandomAccessFile(tableFile, "rw");
+		log.setLength(0);
 		for (String tKey : data.keySet()) {
 			Row r = data.get(tKey);
 			long offset = log.length();
-			byte[] rowContent = r.toByteArray();
 			log.seek(offset);
-			log.write(rowContent);
-			byte[] lf = {10};
-			log.write(lf);
+			log.write(r.toByteArray());
+			log.writeBytes("\n");
 		}
+	}
+	
+	public Map<String, Row> getAllData() {
+		return data;
 	}
 }

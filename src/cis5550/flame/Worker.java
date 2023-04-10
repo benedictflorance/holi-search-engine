@@ -644,7 +644,6 @@ class Worker extends cis5550.generic.Worker {
     				accumulatedResult = deserializedLambda.op(accumulatedResult, row.get(c));
     			}
     			//ensuring that the accumulated result of all workers go to the same work during the aggregate step
-    			
     			kvs.put(outputTableName,"rowPlaceholder1234567890" + row.key() ,"value", accumulatedResult);
     		}
     	}

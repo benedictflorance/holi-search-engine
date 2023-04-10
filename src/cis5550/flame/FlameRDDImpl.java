@@ -174,7 +174,7 @@ public class FlameRDDImpl implements FlameRDD {
     	if(scannedTable!=null) {
     		while(scannedTable.hasNext()) {
     			Row row = scannedTable.next();
-    			accumulatedResult = lambda.op(row.get("value"),accumulatedResult);
+    			accumulatedResult = lambda.op(accumulatedResult, row.get("value"));
     		}
     	}
     	return accumulatedResult;

@@ -14,16 +14,16 @@ public class PersistentTable implements Table {
 	String id;
 	String dir;
 	
-	public PersistentTable(String dir, String tKey) throws IOException {
+	public PersistentTable(String tKey, String dir) throws IOException {
 		this.index = new ConcurrentHashMap<String, Long>();
 		this.tableFile = new File(dir + "/" + tKey + ".table");
-		tableFile.createNewFile();
+		this.tableFile.createNewFile();
 		this.log = new RandomAccessFile(tableFile, "rw");
 		this.id = tKey;
 		this.dir = dir;
 	}
 
-	public PersistentTable(String dir, File logFile, String tKey) throws Exception {
+	public PersistentTable(String tKey, String dir, File logFile) throws Exception {
 		index = new ConcurrentHashMap<String, Long>();
 		this.tableFile = logFile;
 		this.log = new RandomAccessFile(tableFile, "rw");
@@ -32,12 +32,20 @@ public class PersistentTable implements Table {
 		recover();
 	}
 	
+	public PersistentTable(String tKey, String dir, Map<String, Row> data) throws Exception {
+		this(tKey, dir);
+		this.index = new ConcurrentHashMap<String, Long>();
+		for (String rKey : data.keySet()) {
+			putRow(rKey, data.get(rKey));
+		}
+		
+	}
+	
 	private synchronized void recover() throws Exception {
 		try {
 			while (log.getFilePointer() != log.length()) {
 				long offset = log.getFilePointer();
 				Row r = Row.readFrom(log);
-				r.values.clear();
 				index.put(r.key, offset);
 			}
 		} catch (Exception e) {
@@ -48,16 +56,24 @@ public class PersistentTable implements Table {
 	public synchronized void putRow(String rKey, Row row) throws Exception {
 		try {
 			long offset = log.length();
-			byte[] rowContent = row.toByteArray();
 			log.seek(offset);
-			log.write(rowContent);
-			byte[] lf = {10};
-			log.write(lf);
-			row.values.clear();
+			log.write(row.toByteArray());
+			log.writeBytes("\n");
 			index.put(rKey, offset);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+
+	public synchronized Row getRowForDisplay(String rKey) throws Exception {
+		if (!index.containsKey(rKey)) {
+			return null;
+		}
+		Row r = new Row(rKey);
+		long pos = index.get(rKey);
+		r.put("pos", String.valueOf(pos));
+		return r;
 	}
 
 	public synchronized Row getRow(String rKey) throws Exception {
@@ -70,7 +86,6 @@ public class PersistentTable implements Table {
 			log.seek(pos);
 			r = Row.readFrom(log);
 		} catch (Exception e) {
-			System.out.println(rKey);
 			e.printStackTrace();
 		}
 		return r;
@@ -92,34 +107,46 @@ public class PersistentTable implements Table {
 		return id;
 	}
 	
-	public void setKey(String tKey) {
+	public synchronized boolean rename(String tKey) throws IOException {
+		if (tKey.equals(id)) {
+			// Do nothing if new key is the same as the old key.
+			return true;
+		}
 		id = tKey;
+		File newTable = new File(dir + "/" + id + ".table");
+		
+		return tableFile.renameTo(newTable);
 	}
 	public synchronized void delete() throws IOException {
 		log.close();
 		tableFile.delete();
 	}
 	public synchronized void collectGarbage() throws Exception {
-			byte[] lf = {10};
 			File newTable = new File(dir + "/" + id + ".temp");
-			RandomAccessFile newLog = new RandomAccessFile(newTable, "rw");
-			Map<String, Long> newIndex = new ConcurrentHashMap<String, Long>();
-			for (String rKey : index.keySet()) {
-				long pos = index.get(rKey);
-				log.seek(pos);
-				Row r = Row.readFrom(log);
-				byte[] rowContent = r.toByteArray();
-				long offset = newLog.length();
-			    newLog.write(rowContent);
-				newLog.write(lf);
-				newIndex.put(r.key, offset);
+			try {
+				byte[] lf = {10};
+				RandomAccessFile newLog = new RandomAccessFile(newTable, "rw");
+				Map<String, Long> newIndex = new ConcurrentHashMap<String, Long>();
+				for (String rKey : index.keySet()) {
+					long pos = index.get(rKey);
+					log.seek(pos);
+					Row r = Row.readFrom(log);
+					byte[] rowContent = r.toByteArray();
+					long offset = newLog.length();
+				    newLog.write(rowContent);
+					newLog.write(lf);
+					newIndex.put(r.key, offset);
+				}
+				this.log.close();
+				this.tableFile.delete();
+				this.tableFile = newTable;
+				this.log = newLog;
+				this.index = newIndex;
+				File rename = new File(dir + "/" + id + ".table");
+				newTable.renameTo(rename);
+			} catch (Exception e) {
+				newTable.delete();
+				return;
 			}
-			this.log.close();
-			this.tableFile.delete();
-			this.tableFile = newTable;
-			this.log = newLog;
-			this.index = newIndex;
-			File rename = new File(dir + "/" + id + ".table");
-			newTable.renameTo(rename);
 	}
 }

@@ -338,7 +338,7 @@ class HTTPServer implements Runnable{
             error_descriptions.put(403, "Forbidden");
             error_descriptions.put(404, "Not Found");
             error_descriptions.put(405, "Method Not Allowed");
-            error_descriptions.put(500, "Internal Server Errorrrrrr");
+            error_descriptions.put(500, "Internal Server Error");
             error_descriptions.put(501, "Not Implemented");
             error_descriptions.put(505, "HTTP Version not supported");
             extension_types = new HashMap<String, String>();
