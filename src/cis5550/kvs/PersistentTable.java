@@ -3,6 +3,7 @@ package cis5550.kvs;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -122,19 +123,35 @@ public class PersistentTable implements Table {
 		tableFile.delete();
 	}
 	public synchronized void collectGarbage() throws Exception {
+        System.out.println("Garbage collection check");
+			log.seek(0);
+            boolean optimizationNeeded = false;
+            HashMap<String, Row> rows = new HashMap<>();
+            while (true) {
+	            Row row = Row.readFrom(log);
+	            if(row == null)
+	                break;
+	            if(rows.containsKey(row.key())) {
+	                optimizationNeeded = true;
+	            }
+	            rows.put(row.key(), row);
+            } 
+            
+            if (!optimizationNeeded) {
+            	return;
+            }
+            System.out.println("Garbage collection needed");
 			File newTable = new File(dir + "/" + id + ".temp");
 			try {
-				byte[] lf = {10};
 				RandomAccessFile newLog = new RandomAccessFile(newTable, "rw");
 				Map<String, Long> newIndex = new ConcurrentHashMap<String, Long>();
 				for (String rKey : index.keySet()) {
 					long pos = index.get(rKey);
 					log.seek(pos);
 					Row r = Row.readFrom(log);
-					byte[] rowContent = r.toByteArray();
 					long offset = newLog.length();
-				    newLog.write(rowContent);
-					newLog.write(lf);
+				    newLog.write(r.toByteArray());
+					newLog.writeBytes("\n");
 					newIndex.put(r.key, offset);
 				}
 				this.log.close();
