@@ -60,6 +60,7 @@ public class FlameContextImpl implements FlameContext{
 	
 	public Object invokeOperation(String nameOfOp, byte[] lambda, String inputTable, String encodedZeroEle) throws Exception {
 		String opTableName = String.valueOf(System.currentTimeMillis()) + UUID.randomUUID();
+		kvs.persist(opTableName);
 		
 		downloadWorkers();
 		Partitioner partitioner = new Partitioner();
