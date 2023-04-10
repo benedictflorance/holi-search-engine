@@ -2,12 +2,15 @@ package cis5550.jobs;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.HashSet;
 
 import cis5550.flame.*;
@@ -29,6 +32,7 @@ public class Crawler {
 			urlQueue = context.parallelize(Arrays.asList(seed));
 			kvsClient.persist("crawl");
 		} catch (Exception e) {
+			e.printStackTrace();
 			context.output("KVStore not working.");
 			return;
 		}
@@ -41,11 +45,19 @@ public class Crawler {
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
 					String rowKey = Hasher.hash(urlString);
 					if (URLCrawled(rowKey, kvs)) {
+						System.out.println("Already crawled");
 						return new ArrayList<String>();
 					}
 					// Filter bad url
+					URL url;
+					try {
+						url = new URL(urlString);
+					} catch (Exception e) {
+						e.printStackTrace();
+						return new ArrayList<String>();
+					}
 					String[] urlParts = URLParser.parseURL(urlString);
-					if (urlParts[0] == null || urlParts[1] == null) {
+					if (!urlParts[0].equals("https")) {
 						return new ArrayList<String>();
 					}
 					String hostKey = Hasher.hash(urlParts[1]);
@@ -55,16 +67,12 @@ public class Crawler {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					URL url;
-					try {
-						url = new URL(urlString);
-					} catch (Exception e) {
-						return new ArrayList<String>();
-					}
 					if (!robotPermits(hostKey, urlParts, urlString, kvs)) {
+						System.out.println("Robot says no");
 						return new ArrayList<String>();
 					}
 					if (!accessTimeLimitPassed(hostKey, kvs)) {
+						System.out.println("last access too recent");
 						return Arrays.asList(new String[] {urlString});
 					}
 					Row row = new Row(rowKey);
@@ -85,10 +93,10 @@ public class Crawler {
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 			char[] content = new char[1048576];
-			int bytesRead = br.read(content, 0, 1048576);
+			int bytesRead = br.read(content, 0, 1048576); // 1 MB
 			while (bytesRead != -1) {
 				body += new String(content, 0, bytesRead);
-				bytesRead = br.read(content, 0, 1048576);
+				bytesRead = br.read(content, 0, 1048576); // 1 MB
 			}
 			br.close();
 		} catch (Exception e) {
@@ -99,32 +107,22 @@ public class Crawler {
 		return body;
 	}
 	
-	public static String readBody(HttpURLConnection conn, int length) {
-		char[] content = new char[length];
-		int bytes_read = 0;
+	public static boolean URLCrawled(String urlHash, KVSClient kvs) {
 		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			while (bytes_read < length) {
-				int n = br.read(content, 0, length);
-				if (n == -1) {
-					break;
-				}
-				bytes_read += n;
+			if (kvs.existsRow("crawl", urlHash)) {
+				return true;
 			}
-			br.close();
+			return false;
 		} catch (Exception e) {
-			System.out.println("Read failed for URL: " + conn.getURL());
 			e.printStackTrace();
-			return null;
+			return true;
 		}
-		return new String(content, 0, bytes_read);
 	}
-	
 	
 	public static Set<String> extractURLs(String content, String baseURL, List<String> blacklist) {
 		System.out.println("Downloaded page: " + baseURL);
-		java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("<\\s*?a\\s+[^>]*href=\\s*?\"(.*?)\".*?>", java.util.regex.Pattern.CASE_INSENSITIVE);
-		java.util.regex.Matcher matcher = pattern.matcher(content);
+	    Pattern pattern = Pattern.compile("<\\s*?a\\s+[^>]*href=\\s*?\"(.*?)\".*?>", Pattern.CASE_INSENSITIVE);
+		Matcher matcher = pattern.matcher(content);
 		Set<String> newURLs = new HashSet<String>();
 	    while(matcher.find()) {
 	    	String newURL = matcher.group(1);
@@ -144,16 +142,6 @@ public class Crawler {
 	    }
 	    return newURLs;
 	}
-	public static boolean isBlacklisted(String url, List<String> blacklist) {
-        for (String b : blacklist) {
-        	java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(b);
-        	java.util.regex.Matcher matcher = pattern.matcher(url);
-            if (matcher.find()) {
-                return true;
-            }
-        }
-        return false;
-    }
 	
 	public static String normalizeURL(String base, String url) {
 		// Parse results:
@@ -200,7 +188,7 @@ public class Crawler {
 			return baseP[0] + "://" + baseP[1] + ":" + baseP[2] + cutRes[0] + "/" + cutRes[1];
 		}
 		// external url
-		if (!urlP[0].equals("http") && !urlP[0].equals("https")) {
+		if (!urlP[0].equals("https")) {
 			return null;
 		}
 		if (urlP[1] == null) {
@@ -278,92 +266,20 @@ public class Crawler {
 		}
 		return uri.substring(0, i);
 	}
-
-	public static boolean parseRobotsTxt(String robotTxt, String url) {
-		int agent = robotTxt.indexOf("User-agent: cis5550-crawler");
-		if (agent >= 0) {
-			java.io.BufferedReader reader = new BufferedReader(new java.io.StringReader(robotTxt.substring(agent + 28)));
-			try {
-				String line = reader.readLine();
-				boolean seenRule = false;
-				while (line != null) {
-					line = line.trim();
-					if (line.length() == 0) {
-						line = reader.readLine();
-						continue;
-					}
-					if (seenRule && line.startsWith("User-agent")) {
-						// Rule ends.
-						break;
-					}
-					if (line.charAt(0) == '#') {
-						line = reader.readLine();
-						continue;
-					}
-					seenRule = true;
-					int disallow = line.indexOf("Disallow:");
-					if (disallow >= 0) { // There exists a disallow rule
-						String disallowStr = line.substring(disallow + 9).trim();
-						if (disallowStr.length() == 0) {
-							line = reader.readLine();
-							continue;
-						}
-						if (disallowStr.charAt(0) != '/') {
-							line = reader.readLine();
-							continue;
-						}
-						if (url.startsWith(disallowStr)) {
-							return false;
-						}
-						line = reader.readLine();
-						continue;
-					}
-					int allow = line.indexOf("Allow:");
-					if (allow >= 0) {
-						String allowStr = line.substring(allow + 6).trim();
-						if (allowStr.length() == 0) {
-							line = reader.readLine();
-							continue;
-						}
-						if (allowStr.charAt(0) != '/') {
-							line = reader.readLine();
-							continue;
-						}
-						if (url.startsWith(allowStr)) {
-							return true;
-						}
-						line = reader.readLine();
-						continue;
-					}
-					line = reader.readLine();
-				}
-				reader.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return true;
-			}
-			return true;
-		} 
-		// no user-agent specific rule
-		int wild = robotTxt.indexOf("User-agent: *");
-		// No rule applies
-		if (wild < 0) {
-			return true;
-		}
-		// wild card
-		java.io.BufferedReader reader = new BufferedReader(new java.io.StringReader(robotTxt.substring(wild + 13)));
+	
+	public static boolean parseRules(BufferedReader reader, String url) {
 		try {
 			String line = reader.readLine();
 			boolean seenRule = false;
 			while (line != null) {
 				line = line.trim();
-				if (seenRule && line.startsWith("User-agent")) {
-					// Rule ends.
-					break;
-				}
 				if (line.length() == 0) {
 					line = reader.readLine();
 					continue;
+				}
+				if (seenRule && line.startsWith("User-agent")) {
+					// Rule ends.
+					break;
 				}
 				if (line.charAt(0) == '#') {
 					line = reader.readLine();
@@ -371,8 +287,7 @@ public class Crawler {
 				}
 				seenRule = true;
 				int disallow = line.indexOf("Disallow:");
-				if (disallow >= 0) {
-					// There exists a disallow rule
+				if (disallow >= 0) { // There exists a disallow rule
 					String disallowStr = line.substring(disallow + 9).trim();
 					if (disallowStr.length() == 0) {
 						line = reader.readLine();
@@ -382,7 +297,10 @@ public class Crawler {
 						line = reader.readLine();
 						continue;
 					}
-					if (url.startsWith(disallowStr)) {
+					disallowStr = disallowStr.trim().replace("?", "[\\\\?]").replace("*", ".*?").replace("!", "[\\\\!]").replace("/", "\\/") + ".*?";
+					Pattern pattern = Pattern.compile(disallowStr);
+					Matcher matcher = pattern.matcher(url);
+					if (matcher.matches()) {
 						return false;
 					}
 					line = reader.readLine();
@@ -399,7 +317,10 @@ public class Crawler {
 						line = reader.readLine();
 						continue;
 					}
-					if (url.startsWith(allowStr)) {
+					allowStr = allowStr.trim().replace("?", "[\\\\?]").replace("*", ".*?").replace("!", "[\\\\!]").replace("/", "\\/") + ".*?";
+					Pattern pattern = Pattern.compile(allowStr);
+					Matcher matcher = pattern.matcher(url);
+					if (matcher.matches()) {
 						return true;
 					}
 					line = reader.readLine();
@@ -408,23 +329,28 @@ public class Crawler {
 				line = reader.readLine();
 			}
 			reader.close();
-		} catch (Exception e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 			return true;
 		}
 		return true;
 	}
-	
-	public static boolean URLCrawled(String urlHash, KVSClient kvs) {
-		try {
-			if (kvs.existsRow("crawl", urlHash)) {
-				return true;
-			}
-			return false;
-		} catch (Exception e) {
-			e.printStackTrace();
+
+	public static boolean parseRobotsTxt(String robotTxt, String url) {
+		int agent = robotTxt.indexOf("User-agent: cis5550-crawler");
+		if (agent >= 0) {
+			BufferedReader reader = new BufferedReader(new StringReader(robotTxt.substring(agent + 28)));
+			return parseRules(reader, url);
+		} 
+		// no user-agent specific rule
+		int wild = robotTxt.indexOf("User-agent: *");
+		// No rule applies
+		if (wild < 0) {
 			return true;
 		}
+		// wild card
+		BufferedReader reader = new BufferedReader(new StringReader(robotTxt.substring(wild + 13)));
+		return parseRules(reader, url);
 	}
 	
 	public static boolean robotPermits(String hostKey, String[] urlParts, String wholeURL, KVSClient kvs) {
@@ -475,7 +401,6 @@ public class Crawler {
 			// Save robots.txt to KVS
 			kvs.put("hosts", hostKey, "robots.txt", robot.getBytes());
 			if (!parseRobotsTxt(robot, urlParts[3])) {
-				System.out.println("parsed Robots.txt, no");
 				// robots.txt forbids crawling of this page.
 				return false;
 			}
@@ -515,6 +440,7 @@ public class Crawler {
 			HttpURLConnection connHead = (HttpURLConnection) url.openConnection();
 			HttpURLConnection.setFollowRedirects(false);
 			connHead.setRequestProperty("User-Agent", "cis5550-crawler");
+			connHead.addRequestProperty("accept-language", "en");
 			connHead.setRequestMethod("HEAD");
 			connHead.setConnectTimeout(30000);
 			connHead.setReadTimeout(30000);
@@ -545,8 +471,9 @@ public class Crawler {
 				kvs.putRow("crawl", row);
 				return new ArrayList<String>();
 			}
+			contentType = contentType.trim().toLowerCase();
 			row.put("contentType", contentType);
-			if (!contentType.trim().toLowerCase().startsWith("text/html")) {
+			if (!contentType.startsWith("text/html") || !contentType.contains("utf-8")) {
 				kvs.putRow("crawl", row);
 				return new ArrayList<String>();
 			}
@@ -558,10 +485,11 @@ public class Crawler {
 			}
 			// See if we can filter out pages that are not in English
 			String contentLanguage = connHead.getHeaderField("Content-Language");
-			if (contentLanguage != null) {
-				if (!contentLanguage.toLowerCase().contains("en")) {
-					return new ArrayList<String>();
-				}
+			if (contentLanguage == null) {
+				return new ArrayList<String>();
+			}
+			if (!contentLanguage.toLowerCase().contains("en")) {
+				return new ArrayList<String>();
 			}
 			return null;
 		} catch (Exception e) {
@@ -585,29 +513,53 @@ public class Crawler {
 			// Check again if the response code is 200 and if the content type is still text/html, even though it's unlikely that they have changed within such a short amount of time.
 			responseCode = connGet.getResponseCode();
 			row.put("responseCode", String.valueOf(responseCode));
+			if (responseCode == 301 || responseCode == 302 || responseCode == 303 || responseCode == 307 || responseCode == 308) {
+				kvs.putRow("crawl", row);
+				String loc = connGet.getHeaderField("Location");
+				String normalized = normalizeURL(urlString, loc);
+				if (normalized == null) {
+					return new HashSet<String>();
+				}
+				return new HashSet<String>(Arrays.asList(new String[] {normalized}));
+			}
 			if (responseCode != 200) {
 				kvs.putRow("crawl", row);
+				System.out.println("response code");
 				return new HashSet<String>();
 			}
 			String contentType = connGet.getContentType();
 			if (contentType == null) {
+				System.out.println("content type 1");
 				kvs.putRow("crawl", row);
 				return new HashSet<String>();
 			}
 			row.put("contentType", contentType);
-			if (!contentType.trim().toLowerCase().startsWith("text/html")) {
+			contentType = contentType.trim().toLowerCase();
+			if (!contentType.startsWith("text/html") || !contentType.contains("utf-8")) {
+				System.out.println("content type 2");
 				kvs.putRow("crawl", row);
 				return new HashSet<String>();
 			}
 			int contentLength = connGet.getContentLength();
 			row.put("length", String.valueOf(contentLength));
 			if (contentLength > 1024 * 1024 * 512) { // maximum page size: 512 MB
+				System.out.println("content size ");
 				kvs.putRow("crawl", row);
+				return new HashSet<String>();
+			}
+			String contentLanguage = connGet.getHeaderField("Content-Language");
+			if (contentLanguage == null) {
+				System.out.println("content lang 1");
+				return new HashSet<String>();
+			}
+			if (!contentLanguage.toLowerCase().contains("en")) {
+				System.out.println("content lang 2");
 				return new HashSet<String>();
 			}
 			// Finally, read the content of the page and put it to KVS.
 			String contentStr = readBody(connGet);
 			if (contentStr == null) {
+				System.out.println("body 1");
 				kvs.putRow("crawl", row);
 				return new HashSet<String>();
 			}
@@ -620,6 +572,17 @@ public class Crawler {
 			return new HashSet<String>();
 		}
 	}
+	
+	public static boolean isBlacklisted(String url, List<String> blacklist) {
+        for (String b : blacklist) {
+        	Pattern pattern = Pattern.compile(b);
+        	Matcher matcher = pattern.matcher(url);
+            if (matcher.find()) {
+                return true;
+            }
+        }
+        return false;
+    }
 	
 	public static String[] buildBadURLsList() {
 		String proto = "http.*:\\/\\/";
