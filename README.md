@@ -9,7 +9,7 @@ Flame Worker: ``9001 localhost:9000``<br>
 ## Ranker:
 
 ### Current Ranking 
-Descending sort of 3 * w_td * w_tq + 0.75 * page_rank, where w_td uses Euclidean normalized tf_weighting without use of idfm w_tq is the product of the query term prequency and the idf raised to 1.5 and page_rank is the the page rank value resulting out of the iterative page rank algorithm.
+Descending sort of 3 * w_td * w_tq + 0.75 * page_rank, where w_td uses Euclidean normalized tf_weighting without use of idf, w_tq is the product of the query term prequency and the idf raised to 1.5 and page_rank is the the page rank value resulting out of the iterative page rank algorithm.
 
 ### Dependencies:
 - ['com.google.code.gson:gson:2.10.1'](https://github.com/google/gson) (already jar is added in lib/)
