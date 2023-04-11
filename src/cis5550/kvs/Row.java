@@ -7,21 +7,14 @@ public class Row implements Serializable {
 
   protected String key;
   protected HashMap<String,byte[]> values;
-  protected HashMap<String, HashMap<Integer,byte[]>> versionValues;
-  private Integer version = 0;
 
   public Row(String keyArg) {
     key = keyArg;
     values = new HashMap<String,byte[]>();
-    versionValues = new HashMap<String, HashMap<Integer,byte[]>> ();
   }
 
   public synchronized String key() {
     return key;
-  }
-  
-  public synchronized Integer version() {
-	  return version;
   }
 
   public synchronized Row clone() {
@@ -38,37 +31,9 @@ public class Row implements Serializable {
   public synchronized void put(String key, String value) {
     values.put(key, value.getBytes());
   }
-  
-  public synchronized void Vput(String key, String value) {
-	  
-	  if(!versionValues.containsKey(key)) {
-		  versionValues.put(key, new HashMap<Integer,byte[]>());  
-	  }
-	  Map<Integer, byte[]> columnMap = versionValues.get(key);
-	  
-	  byte[] previousVal = columnMap.get(version);
-	  if(Arrays.equals(previousVal, value.getBytes()))
-		  return;
 
-	  version++;
-	  
-	  columnMap.put(version,value.getBytes());
-  }
-  
   public synchronized void put(String key, byte[] value) {
     values.put(key, value);
-  }
-  
-  public synchronized void Vput(String key, byte[] value) {
-	  if(!versionValues.containsKey(key)) {
-		  versionValues.put(key,  new HashMap<Integer,byte[]>());  
-	  }
-	  Map<Integer, byte[]> columnMap = versionValues.get(key);
-	  byte[] previousVal = columnMap.get(version);
-	  if(Arrays.equals(previousVal, value))
-		  return;
-	  version++;
-	  columnMap.put(version,value);
   }
 
   public synchronized String get(String key) {
@@ -77,23 +42,8 @@ public class Row implements Serializable {
   	return new String(values.get(key));
   }
 
-  public synchronized String Vget(String key, Integer version) {
-	    if (versionValues.get(key) == null)
-	      return null;
-	  	return new String(versionValues.get(key).get(version));
-	  }
-  
   public synchronized byte[] getBytes(String key) {
     return values.get(key);
-  }
-  
-  public synchronized byte[] VgetBytes(String key, Integer version) {
-	  if (versionValues.get(key) != null) {
-		  System.out.println(versionValues.get(key).get(version));
-		  return versionValues.get(key).get(version);
-	  }
-		  
-	  return null;
   }
 
   static String readStringSpace(InputStream in) throws Exception {
