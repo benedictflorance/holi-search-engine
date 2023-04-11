@@ -22,7 +22,7 @@ To run the ranker, use
 JSON stringified Java objects, where each object has three fields: 
 - a. url - url of the webpage, 
 - b. title - title of the webpage (max of 60 characters), 
-- c. snippet - snippet of the webpage (max of 300 characters)
+- c. page_head - snippet of the webpage (max of 300 characters)
 
 ### Usage Instructions
 - Has a GET request method with path `/search` with a required query parameter `q` that has the encoded query phrase string and an optional query parameter `page` that defaults to 1 (first page). Each page returns 10 urls. Pages beyond the number of matching urls will return empty strings.
