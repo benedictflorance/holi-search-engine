@@ -1,6 +1,6 @@
 # Holi Search Engine
 
-## Crawler
+## Crawler:
 Run arguments for testing on local machine:<br>
 KVS Master: ``8000``<br>
 KVS Worker: ``8001 localhost:8000``<br>
