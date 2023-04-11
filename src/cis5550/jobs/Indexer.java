@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -42,7 +41,7 @@ public class Indexer {
 	            // Remove HTML tags
 	            page = page.replaceAll("<.*?>", " ");
 	            //convert to lowercase
-	            page = page.toLowerCase();
+//	            page = page.toLowerCase();
 	            // Remove punctuation
 //	            page = page.replaceAll("[^a-z\\s]", "");
 	            page = page.replaceAll("[.,:;!?'\"\\(\\)-]", " ");
@@ -67,6 +66,12 @@ public class Indexer {
 	            for (String word : words) {
 	            	if(!word.trim().isEmpty()) {
 //	            		pairs.add(new FlamePair(word.trim(), url));
+	            		if(!new EnglishWordChecker().isEnglishWord(word)) {
+		            		System.out.println("Not an English word: " + word);
+		            		continue;
+		            	}
+	            		
+	            		word = word.toLowerCase();
 	            		
 	            		//Word positions EC
 	            		wordPositions.putIfAbsent(word,new TreeSet<>());
@@ -75,22 +80,21 @@ public class Indexer {
 	            	}
 	            }
 	           
-	            pos = 1;
-	            //also added the stemmed version of all words
-	            for (String word : words) {
-	            	Stemmer s = new Stemmer();
-	            	if(!word.trim().isEmpty()) {
-	            		s.add(word.toCharArray(), word.length());
-	            		s.stem();
-//	            		pairs.add(new FlamePair(s.toString(), url));
-	            		
-	            		//Word positions EC
-	            		wordPositions.putIfAbsent(s.toString(),new TreeSet<>());
-	            		wordPositions.get(s.toString()).add(pos);
-	            		
-	            		pos++;
-	            	}
-	            }
+//	            pos = 1;
+//	            //also added the stemmed version of all words
+//	            for (String word : words) {
+//	            	Stemmer s = new Stemmer();
+//	            	if(!word.trim().isEmpty()) {
+//	            		s.add(word.toCharArray(), word.length());
+//	            		s.stem();
+//	            		word = word.toLowerCase();
+//	            		//Word positions EC
+//	            		wordPositions.putIfAbsent(s.toString(),new TreeSet<>());
+//	            		wordPositions.get(s.toString()).add(pos);
+//	            		
+//	            		pos++;
+//	            	}
+//	            }
 	            
 	            // Create (word, url) pairs
 	            Set<FlamePair> pairs = new HashSet<>();
@@ -102,7 +106,8 @@ public class Indexer {
 	                	sb.append(position).append(" ");
 	                }
 	                String result = sb.toString().trim();
-	                pairs.add(new FlamePair(word, url + ":" + result));
+//	                pairs.add(new FlamePair(word, url + ":" + result));
+	                pairs.add(new FlamePair(word, url));
 	            }
 	            
 	            
@@ -124,20 +129,23 @@ public class Indexer {
 			        List<String> urlList = new ArrayList<>(Arrays.asList((u1 + "," + u2).split(",")));
 			        
 			        // Flatten the list of URLs into a single string
-			        String urlsString = String.join(", ", urlList);
+//			        String urlsString = String.join(", ", urlList);
 			        
-			        // Split the string of URLs by commas and zero or more spaces
-			        String[] urls = urlsString.split(",\\s*");
-			        
-			        // Sort urls based on how many spaces each one has, in descending order
-			        Arrays.sort(urls, new Comparator<String>() {
-			            public int compare(String url1, String url2) {
-			                int spaceCount1 = url1.length() - url1.replaceAll("\\s+", "").length();
-			                int spaceCount2 = url2.length() - url2.replaceAll("\\s+", "").length();
-			                return spaceCount2 - spaceCount1;
-			            }
-			        });
-			        return String.join(",", urls);
+//			        // Split the string of URLs by commas and zero or more spaces
+//			        String[] urls = urlsString.split(",\\s*");
+//			        
+//			        // Sort urls based on how many spaces each one has, in descending order
+//			        Arrays.sort(urls, new Comparator<String>() {
+//			            public int compare(String url1, String url2) {
+//			                int spaceCount1 = url1.length() - url1.replaceAll("\\s+", "").length();
+//			                int spaceCount2 = url2.length() - url2.replaceAll("\\s+", "").length();
+//			                return spaceCount2 - spaceCount1;
+//			            }
+//			        });
+//			        return String.join(",", urls);
+			        return String.join(",", urlList);
+
+
 			    }
 			})
 			.saveAsTable("index-temp");

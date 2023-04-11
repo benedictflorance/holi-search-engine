@@ -6,6 +6,13 @@ KVS Worker: ``8001 localhost:8000``<br>
 Flame Master: ``9000``<br>
 Flame Worker: ``9001 localhost:9000``<br>
 
+## Indexer:
+- To compile the Indexer, use 
+`javac -cp src/cis5550/lib/jazzy-0.5.2-rtext-1.4.1-2.jar --source-path src src/cis5550/jobs/Indexer.java`
+
+### Dependencies:
+- https://jazzy.sourceforge.net/ (already jar is added in lib/)
+
 ## Ranker:
 
 ### Methodology 
