@@ -6,8 +6,7 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="src/cis5550/lib/commons-text-1.10.0.jar"/>
-	<classpathentry kind="lib" path="src/cis5550/lib/jazzy-0.5.2-rtext-1.4.1-2.jar"/>
+	<classpathentry kind="lib" path="lib/jazzy-0.5.2-rtext-1.4.1-2.jar"/>
 	<classpathentry kind="lib" path="lib/gson-2.10.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

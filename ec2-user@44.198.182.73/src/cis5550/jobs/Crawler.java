@@ -39,7 +39,7 @@ public class Crawler {
 		String kvsMasterAddr = context.getKVS().getMaster();
 		List<String> blacklist = new ArrayList<String>(Arrays.asList(buildBadURLsList()));
 		// Start crawling
-		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 100) {
+		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 20000) {
 				urlQueue = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
@@ -119,7 +119,7 @@ public class Crawler {
 		}
 	}
 	
-	public static Set<String> extractURLs(String content, String baseURL, List<String> blacklist, KVSClient kvs) {
+	public static Set<String> extractURLs(String content, String baseURL, List<String> blacklist) {
 		System.out.println("Downloaded page: " + baseURL);
 	    Pattern pattern = Pattern.compile("<\\s*?a\\s+[^>]*href=\\s*?\"(.*?)\".*?>", Pattern.CASE_INSENSITIVE);
 		Matcher matcher = pattern.matcher(content);
@@ -136,10 +136,6 @@ public class Crawler {
 	    		continue;
 	    	}
 	    	if (isBlacklisted(newURLNorm, blacklist)) {
-	    		continue;
-	    	}
-	    	String urlHash  = Hasher.hash(newURLNorm);
-	    	if (URLCrawled(urlHash, kvs)) {
 	    		continue;
 	    	}
 	    	newURLs.add(newURLNorm);
@@ -570,7 +566,7 @@ public class Crawler {
 			row.put("page", contentStr);
 			kvs.putRow("crawl", row);
 			// Extract more URLs from this page and put them to the back of the queue.
-			return extractURLs(contentStr, urlString, blacklist, kvs);
+			return extractURLs(contentStr, urlString, blacklist);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new HashSet<String>();
