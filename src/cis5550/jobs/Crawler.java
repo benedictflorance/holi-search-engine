@@ -39,7 +39,7 @@ public class Crawler {
 		String kvsMasterAddr = context.getKVS().getMaster();
 		List<String> blacklist = new ArrayList<String>(Arrays.asList(buildBadURLsList()));
 		// Start crawling
-		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 20000) {
+		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 100) {
 				urlQueue = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
@@ -72,7 +72,7 @@ public class Crawler {
 						return new ArrayList<String>();
 					}
 					if (!accessTimeLimitPassed(hostKey, kvs)) {
-						System.out.println("last access too recent");
+						Thread.sleep(1000);
 						return Arrays.asList(new String[] {urlString});
 					}
 					Row row = new Row(rowKey);
