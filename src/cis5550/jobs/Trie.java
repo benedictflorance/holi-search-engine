@@ -147,7 +147,15 @@ public class Trie {
      * @return if the trie contains the word
      */
     public boolean containsWord(String query) {
-        return containsWordHelper(query, root, 0);
+    	 if (Character.isUpperCase(query.charAt(0))) {
+             return true;
+         }
+    	 //to account for numbers
+    	 if(query.matches(".*\\d.*")) {
+    		 return true;
+    	 }
+    	
+        return containsWordHelper(query.toLowerCase(), root, 0);
     }
 
     /**
@@ -185,6 +193,20 @@ public class Trie {
             line = br.readLine();
         }
         br.close();
+    }
+    
+    public static void main(String args[]) {
+    	Trie trie = new Trie();
+		try {
+			trie.buildTrie("src/cis5550/jobs/words_alpha.txt");
+			System.out.println(trie.containsWord("hello"));
+			System.out.println(trie.containsWord("Hello"));
+			System.out.println(trie.containsWord("byebyebybye"));
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
    
 }
