@@ -66,10 +66,10 @@ public class Indexer {
 	            for (String word : words) {
 	            	if(!word.trim().isEmpty()) {
 //	            		pairs.add(new FlamePair(word.trim(), url));
-	            		if(!new EnglishWordChecker().isEnglishWord(word)) {
-		            		System.out.println("Not an English word: " + word);
-		            		continue;
-		            	}
+//	            		if(!new EnglishWordChecker().isEnglishWord(word)) {
+//		            		System.out.println("Not an English word: " + word);
+//		            		continue;
+//		            	}
 	            		
 	            		word = word.toLowerCase();
 	            		
