@@ -12,11 +12,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+//import org.apache.commons.text.WordUtils;
 
 import cis5550.flame.FlameContext;
 import cis5550.flame.FlamePair;
 import cis5550.flame.FlamePairRDD;
 import cis5550.flame.FlameRDD;
+import cis5550.kvs.Row;
 
 
 public class Indexer {
@@ -30,9 +32,8 @@ public class Indexer {
 			
 			flamePairRdd.flatMapToPair(urlPage -> {
 				
-				
-
 	            String url = urlPage._1();
+	            System.out.println(url);
 	            String page = urlPage._2();
 	            
 	            if(url==null || page==null)
@@ -45,6 +46,12 @@ public class Indexer {
 	            // Remove punctuation
 //	            page = page.replaceAll("[^a-z\\s]", "");
 	            page = page.replaceAll("[.,:;!?'\"\\(\\)-]", " ");
+	            
+	            //Remove non alpha numeric characters
+	            page = page.replaceAll("[^a-zA-Z0-9]", " ");
+
+	            //Remove non ASCII characters
+	            page = page.replaceAll("[^\\p{ASCII}]", " ");
 
 	            // Split into words
 	            String[] words = page.split("\\s+");
@@ -133,17 +140,27 @@ public class Indexer {
 			        return String.join(",", urls);
 			    }
 			})
-			.saveAsTable("index");
+			.saveAsTable("index-temp");
+			
+			Iterator<Row> indexRow = ctx.getKVS().scan("index-temp");
+			while(indexRow.hasNext()) {
+				Row currRow = indexRow.next();
+				List<String> currCol = new ArrayList<String>(currRow.columns());
+				ctx.getKVS().put("index", currRow.key(), "url", currRow.get(currCol.get(0)));
+			}
 			
 			ctx.output("OK");
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
+			ctx.output("Exception");
 			e.printStackTrace();
 		} catch (IOException e) {
+			ctx.output("Exception");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}catch (Exception e) {
+			ctx.output("Exception");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

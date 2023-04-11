@@ -115,12 +115,12 @@ public class FlameContextImpl implements FlameContext{
 	        }
 	      }
 	      
-	      for(int i=0; i<results.length; i++) {
-	    	  if(!results[i].equals("OK")){
-            	  //throw a custom exception
-	    		  throw new CustomException("Worker "+ i + " failed and returned " + results[i]);
-              }
-	      }
+//	      for(int i=0; i<results.length; i++) {
+//	    	  if(!results[i].equals("OK")){
+//            	  //throw a custom exception
+//	    		  throw new CustomException("Worker "+ i + " failed and returned " + results[i]);
+//              }
+//	      }
 	      
 	      return opTableName;
 	}
