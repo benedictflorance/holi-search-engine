@@ -70,4 +70,6 @@ public interface FlamePairRDD {
   // extra credit in HW7; if you do not implement it, please return 'null'.
 
   public FlamePairRDD cogroup(FlamePairRDD other) throws Exception;
+
+  public void delete() throws Exception;
 }

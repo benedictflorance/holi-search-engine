@@ -110,5 +110,11 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
 	}
+	
+	@Override
+	public void delete() throws Exception {
+		KVSClient kvs = new KVSClient(Master.masterAddr);
+		kvs.delete(tableName);
+	}
 
 }
