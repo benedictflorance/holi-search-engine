@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -12,7 +11,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-//import org.apache.commons.text.WordUtils;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import cis5550.flame.FlameContext;
 import cis5550.flame.FlamePair;
@@ -36,15 +36,31 @@ public class Indexer {
 	            System.out.println(url);
 	            String page = urlPage._2();
 	            
+	            
+	            
 	            if(url==null || page==null)
 	            	return null;
 
+	            
+	         	// Remove contebt from meta, script and link tags
+	            String patternString = "<(meta|script|link)(\\s[^>]*)?>.*?</(meta|script|link)>";
+	            // Compile the pattern
+	            Pattern pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+	            // Match the pattern against the HTML string
+	            Matcher matcher = pattern.matcher(page);
+	            page = matcher.replaceAll(" ");
+	            
 	            // Remove HTML tags
 	            page = page.replaceAll("<.*?>", " ");
+	            
+//	            // Cut the page size into 1/5th
+//	            page = page.substring(0, page.length()/5);
+	            
+
 	            //convert to lowercase
-	            page = page.toLowerCase();
+//	            page = page.toLowerCase();
+	            
 	            // Remove punctuation
-//	            page = page.replaceAll("[^a-z\\s]", "");
 	            page = page.replaceAll("[.,:;!?'\"\\(\\)-]", " ");
 	            
 	            //Remove non alpha numeric characters
@@ -62,11 +78,24 @@ public class Indexer {
 	            // TODO: check - Remove duplicates
 //	            Set<String> uniqueWords = new HashSet<>(Arrays.asList(words));
 	            
-	            
+	            Trie trie = new Trie();
+				trie.buildTrie("src/cis5550/jobs/words_alpha.txt");
 	            int pos = 1;
 	            for (String word : words) {
 	            	if(!word.trim().isEmpty()) {
+	            		word = word.trim();
 //	            		pairs.add(new FlamePair(word.trim(), url));
+//	            		if(!new EnglishWordChecker().isEnglishWord(word)) {
+//		            		System.out.println("Not an English word: " + word);
+//		            		continue;
+//		            	}
+	            		
+	            		if(!trie.containsWord(word)) {
+	            			System.out.println("Not an English word: " + word);
+	            			continue;
+	            		}
+	            		
+	            		word = word.toLowerCase();
 	            		
 	            		//Word positions EC
 	            		wordPositions.putIfAbsent(word,new TreeSet<>());
@@ -80,9 +109,10 @@ public class Indexer {
 	            for (String word : words) {
 	            	Stemmer s = new Stemmer();
 	            	if(!word.trim().isEmpty()) {
+	            		word = word.trim();
+	            		word = word.toLowerCase();
 	            		s.add(word.toCharArray(), word.length());
 	            		s.stem();
-//	            		pairs.add(new FlamePair(s.toString(), url));
 	            		
 	            		//Word positions EC
 	            		wordPositions.putIfAbsent(s.toString(),new TreeSet<>());
@@ -102,7 +132,8 @@ public class Indexer {
 	                	sb.append(position).append(" ");
 	                }
 	                String result = sb.toString().trim();
-	                pairs.add(new FlamePair(word, url + ":" + result));
+//	                pairs.add(new FlamePair(word, url + ":" + result));
+	                pairs.add(new FlamePair(word, url));
 	            }
 	            
 	            
@@ -124,20 +155,23 @@ public class Indexer {
 			        List<String> urlList = new ArrayList<>(Arrays.asList((u1 + "," + u2).split(",")));
 			        
 			        // Flatten the list of URLs into a single string
-			        String urlsString = String.join(", ", urlList);
+//			        String urlsString = String.join(", ", urlList);
 			        
-			        // Split the string of URLs by commas and zero or more spaces
-			        String[] urls = urlsString.split(",\\s*");
-			        
-			        // Sort urls based on how many spaces each one has, in descending order
-			        Arrays.sort(urls, new Comparator<String>() {
-			            public int compare(String url1, String url2) {
-			                int spaceCount1 = url1.length() - url1.replaceAll("\\s+", "").length();
-			                int spaceCount2 = url2.length() - url2.replaceAll("\\s+", "").length();
-			                return spaceCount2 - spaceCount1;
-			            }
-			        });
-			        return String.join(",", urls);
+//			        // Split the string of URLs by commas and zero or more spaces
+//			        String[] urls = urlsString.split(",\\s*");
+//			        
+//			        // Sort urls based on how many spaces each one has, in descending order
+//			        Arrays.sort(urls, new Comparator<String>() {
+//			            public int compare(String url1, String url2) {
+//			                int spaceCount1 = url1.length() - url1.replaceAll("\\s+", "").length();
+//			                int spaceCount2 = url2.length() - url2.replaceAll("\\s+", "").length();
+//			                return spaceCount2 - spaceCount1;
+//			            }
+//			        });
+//			        return String.join(",", urls);
+			        return String.join(",", urlList);
+
+
 			    }
 			})
 			.saveAsTable("index-temp");
@@ -148,6 +182,8 @@ public class Indexer {
 				List<String> currCol = new ArrayList<String>(currRow.columns());
 				ctx.getKVS().put("index", currRow.key(), "url", currRow.get(currCol.get(0)));
 			}
+			
+			ctx.getKVS().delete("index-temp");
 			
 			ctx.output("OK");
 			

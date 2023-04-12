@@ -1,10 +1,26 @@
 # Holi Search Engine
 
+## Crawler:
 Run arguments for testing on local machine:<br>
 KVS Master: ``8000``<br>
 KVS Worker: ``8001 localhost:8000``<br>
 Flame Master: ``9000``<br>
 Flame Worker: ``9001 localhost:9000``<br>
+
+Run arguments for EC2:<br>
+KVS Master: ``sudo java -cp bin cis5550.kvs.Master 8000``<br>
+KVS Worker: ``sudo java -cp bin cis5550.kvs.Worker 8001 worker1 44.198.182.73:8000``<br>
+Flame Master: ``sudo java -cp bin cis5550.flame.Master 9000 44.198.182.73:8000``<br>
+Flame Worker: ``sudo java -cp bin cis5550.flame.Worker 9001 44.198.182.73:9000``<br>
+
+Flame submit(run this command on a local machine): ``java -cp bin cis5550.flame.FlameSubmit 44.198.182.73:9000 crawler.jar cis5550.jobs.Crawler https://en.wikipedia.org/``<br>
+
+## Indexer:
+- To compile the Indexer, use 
+`javac -cp src/cis5550/lib/jazzy-0.5.2-rtext-1.4.1-2.jar --source-path src src/cis5550/jobs/Indexer.java`
+
+### Dependencies:
+- https://jazzy.sourceforge.net/ (already jar is added in lib/)
 
 ## Ranker:
 
