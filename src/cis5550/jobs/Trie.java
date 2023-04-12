@@ -41,11 +41,12 @@ public class Trie {
             return;
         }
         n.numPrefixes++;
-        int c = word.charAt(pos) - 'a';
-        if (n.children[c] == null) {
-            n.children[c] = new TrieNode();
+        TrieNode child = n.children.get(word.charAt(pos));
+        if (child == null) {
+        	child = new TrieNode();
+            n.children.put(word.charAt(pos), child);
         }
-        addHelper(n.children[c], word, pos + 1);
+        addHelper(child, word, pos + 1);
     }
 
     /**
@@ -57,11 +58,10 @@ public class Trie {
         TrieNode current = root;
         int i = 0;
         while (i < prefix.length()) {
-            if (current.children[prefix.charAt(i) - 'a'] == null) {
+            if (!current.children.containsKey(prefix.charAt(i))) {
                 return null;
-            } else {
-                current = current.children[prefix.charAt(i) - 'a'];
             }
+            current = current.children.get(prefix.charAt(i));
             i++;
         }
         return current;
@@ -88,13 +88,12 @@ public class Trie {
             return node.numPrefixes;
         } else {
             // Get the alphabetical position of the character
-            int c = prefix.charAt(pos) - 'a';
+            char c = prefix.charAt(pos);
             // If the prefix doesn't have a child, there would be no word
-            if (node.children[c] == null) {
+            if (!node.children.containsKey(c)) {
                 return 0;
             }
-
-            return countPrefixesHelper(prefix, node.children[c], pos + 1);
+            return countPrefixesHelper(prefix, node.children.get(c), pos + 1);
         }
     }
 
@@ -125,12 +124,12 @@ public class Trie {
         if (node.hasWord()) {
             set.add(sb.toString());
         }
-        for (int i = 0; i < node.children.length; i++) {
-            sb.append((char) (i + 'a'));
-            getSuggestionsHelper(set, node.children[i], sb);
+        for (Character c : node.children.keySet()) {
+        	sb.append(c);
+            getSuggestionsHelper(set, node.children.get(c), sb);
             sb.setLength(sb.length() - 1);
+        	
         }
-
     }
 
     /**
@@ -161,11 +160,11 @@ public class Trie {
         if (pos == query.length()) {
             return node.hasWord();
         }
-        int c = query.charAt(pos) - 'a';
-        if (node.children[c] == null) {
+        char c = query.charAt(pos);
+        if (!node.children.containsKey(c)) {
             return false;
         }
-        return containsWordHelper(query, node.children[c], pos + 1);
+        return containsWordHelper(query, node.children.get(c), pos + 1);
         
     }
     public void buildTrie(String filename) throws Exception {
@@ -191,7 +190,7 @@ public class Trie {
 			trie.buildTrie("src/cis5550/jobs/words_alpha.txt");
 			System.out.println(trie.containsWord("hello"));
 			System.out.println(trie.containsWord("Hello"));
-			System.out.println(trie.containsWord("bible"));
+			System.out.println(trie.containsWord("chatting"));
 			
 		} catch (Exception e) {
 			e.printStackTrace();
