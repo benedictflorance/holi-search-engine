@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +27,10 @@ public class Crawler {
 			return;
 		}
 		String seed = normalizeURL("", args[0]);
+		if (seed == null) {
+			context.output("Seed bad");
+			return;
+		}
 		FlameRDD urlQueue;
 		KVSClient kvsClient = context.getKVS();
 		try {
@@ -39,7 +44,7 @@ public class Crawler {
 		String kvsMasterAddr = context.getKVS().getMaster();
 		List<String> blacklist = new ArrayList<String>(Arrays.asList(buildBadURLsList()));
 		// Start crawling
-		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 100) {
+		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 50000) {
 				urlQueue = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
@@ -489,11 +494,10 @@ public class Crawler {
 			}
 			// See if we can filter out pages that are not in English
 			String contentLanguage = connHead.getHeaderField("Content-Language");
-			if (contentLanguage == null) {
-				return new ArrayList<String>();
-			}
-			if (!contentLanguage.toLowerCase().contains("en")) {
-				return new ArrayList<String>();
+			if (contentLanguage != null) {
+				if (!contentLanguage.toLowerCase().contains("en")) {
+					return new ArrayList<String>();
+				}
 			}
 			return null;
 		} catch (Exception e) {
@@ -528,42 +532,34 @@ public class Crawler {
 			}
 			if (responseCode != 200) {
 				kvs.putRow("crawl", row);
-				System.out.println("response code");
 				return new HashSet<String>();
 			}
 			String contentType = connGet.getContentType();
 			if (contentType == null) {
-				System.out.println("content type 1");
 				kvs.putRow("crawl", row);
 				return new HashSet<String>();
 			}
 			row.put("contentType", contentType);
 			contentType = contentType.trim().toLowerCase();
 			if (!contentType.startsWith("text/html") || !contentType.contains("utf-8")) {
-				System.out.println("content type 2");
 				kvs.putRow("crawl", row);
 				return new HashSet<String>();
 			}
 			int contentLength = connGet.getContentLength();
 			row.put("length", String.valueOf(contentLength));
 			if (contentLength > 1024 * 1024 * 512) { // maximum page size: 512 MB
-				System.out.println("content size ");
 				kvs.putRow("crawl", row);
 				return new HashSet<String>();
 			}
 			String contentLanguage = connGet.getHeaderField("Content-Language");
-			if (contentLanguage == null) {
-				System.out.println("content lang 1");
-				return new HashSet<String>();
-			}
-			if (!contentLanguage.toLowerCase().contains("en")) {
-				System.out.println("content lang 2");
-				return new HashSet<String>();
+			if (contentLanguage != null) {
+				if (!contentLanguage.toLowerCase().contains("en")) {
+					return new HashSet<String>();
+				}
 			}
 			// Finally, read the content of the page and put it to KVS.
 			String contentStr = readBody(connGet);
 			if (contentStr == null) {
-				System.out.println("body 1");
 				kvs.putRow("crawl", row);
 				return new HashSet<String>();
 			}
@@ -595,6 +591,12 @@ public class Crawler {
 							 proto + ".*\\.appfinders\\.com*",
 							 proto + "[www.]*youtube\\.com*",
 							 proto + "[www.]*flickr\\.com*"};
+	}
+	
+	public static void main(String[] args) throws IOException {
+		KVSClient kvs = new KVSClient("localhost:8000");
+		System.out.println(URLDecoder.decode("http%3A%2F%2Fwww.footballdatabase.eu%3A80%2Ffootball.joueurs..roberto-carlos.419.en.html", "UTF-8"));
+		kvs.put("test", "http%3A%2F%2Fwww.footballdatabase.eu%3A80%2Ffootball.joueurs..roberto-carlos.419.en.html", "test-col", "v");
 	}
 	
 }
