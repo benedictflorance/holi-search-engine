@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -138,21 +139,20 @@ public class PersistentTable implements Table {
 		synchronized (lock) {
 			log.seek(0);
             boolean optimizationNeeded = false;
-            HashMap<String, Row> rows = new HashMap<>();
+            Set<String> rows = new HashSet<>();
             while (true) {
 	            Row row = Row.readFrom(log);
 	            if(row == null)
 	                break;
-	            if(rows.containsKey(row.key())) {
+	            if(rows.contains(row.key())) {
 	                optimizationNeeded = true;
+	                break;
 	            }
-	            rows.put(row.key(), row);
-            } 
-            
+	            rows.add(row.key());
+            }
             if (!optimizationNeeded) {
             	return;
             }
-            System.out.println("Garbage collection needed");
 			File newTable = new File(dir + "/" + id + ".temp");
 			try {
 				RandomAccessFile newLog = new RandomAccessFile(newTable, "rw");
