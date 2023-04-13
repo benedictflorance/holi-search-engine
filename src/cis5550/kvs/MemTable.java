@@ -29,7 +29,7 @@ public class MemTable implements Table {
 		log.write(row.toByteArray());
 		log.writeBytes("\n");
 	}
-	public synchronized Row getRow(String rKey) {
+	public Row getRow(String rKey) {
 		return data.get(rKey);
 	}
 	public Row getRowForDisplay(String rKey) {
@@ -41,13 +41,13 @@ public class MemTable implements Table {
 	public int numRows() {
 		return data.size();
 	}
-	public synchronized Set<String> getRowKeys() {
+	public  Set<String> getRowKeys() {
 		return data.keySet();
 	}
 	public String getKey() {
 		return id;
 	}
-	public synchronized boolean rename(String tKey) {
+	public boolean rename(String tKey) {
 		id = tKey;
 		return true;
 	}
@@ -67,7 +67,7 @@ public class MemTable implements Table {
 		}
 	}
 	
-	public synchronized Map<String, Row> getAllData() {
+	public Map<String, Row> getAllData() {
 		return data;
 	}
 }

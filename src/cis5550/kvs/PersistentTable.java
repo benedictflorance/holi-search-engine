@@ -68,7 +68,7 @@ public class PersistentTable implements Table {
 	}
 
 
-	public synchronized Row getRowForDisplay(String rKey) throws Exception {
+	public Row getRowForDisplay(String rKey) throws Exception {
 		if (!index.containsKey(rKey)) {
 			return null;
 		}
@@ -102,7 +102,7 @@ public class PersistentTable implements Table {
 		return index.size();
 	}
 	
-	public synchronized Set<String> getRowKeys() {
+	public Set<String> getRowKeys() {
 		return index.keySet();
 	}
 	
