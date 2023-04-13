@@ -19,7 +19,7 @@ public class Master extends cis5550.generic.Master{
 			res.status(200, "OK");
 			res.type("text/html");
 			return workerTable(); 
-			});
+		});
 		
 		Thread daemonThread = new Thread(){
 		    public void run(){
@@ -27,8 +27,10 @@ public class Master extends cis5550.generic.Master{
 					try {
 						 for (Entry<String, cis5550.generic.Worker> entry : activeWorkers.entrySet()) { 
 							 cis5550.generic.Worker worker = entry.getValue();
-							 if((System.currentTimeMillis() - worker.getLastAccessedTime())>15000)
-								 activeWorkers.remove(entry.getKey(), entry.getValue());
+							 if(System.currentTimeMillis() - worker.getLastAccessedTime()>15000) {
+								System.out.println("Remove worker");
+								// activeWorkers.remove(entry.getKey(), entry.getValue());
+							 }
 						 }
 						Thread.sleep(5000);
 					} catch (InterruptedException e) {

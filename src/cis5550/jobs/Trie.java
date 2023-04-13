@@ -190,7 +190,7 @@ public class Trie {
 			trie.buildTrie("src/cis5550/jobs/words_alpha.txt");
 			System.out.println(trie.containsWord("hello"));
 			System.out.println(trie.containsWord("Hello"));
-			System.out.println(trie.containsWord("chatting"));
+			System.out.println(trie.containsWord("begf"));
 			
 		} catch (Exception e) {
 			e.printStackTrace();

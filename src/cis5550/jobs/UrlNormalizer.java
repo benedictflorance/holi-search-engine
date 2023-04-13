@@ -2,7 +2,6 @@ package cis5550.jobs;
 import cis5550.tools.URLParser;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 
 public class UrlNormalizer {
 
