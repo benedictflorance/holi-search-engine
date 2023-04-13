@@ -183,7 +183,9 @@ class HTTPServer implements Runnable{
         }
     }
     public class MalformedRequestException extends Exception {
-        public MalformedRequestException(String errorMessage) {
+        private static final long serialVersionUID = 1L;
+
+		public MalformedRequestException(String errorMessage) {
             super(errorMessage);
         }
     }
@@ -231,9 +233,9 @@ class HTTPServer implements Runnable{
             }
         }
         String host_name = r.headers.get("host");
-        for(int i = 0; i < server.routes.size(); i++)
+        for(int i = 0; i < Server.routes.size(); i++)
         {
-            if(server.routes.get(i).host.equals(host_name))
+            if(Server.routes.get(i).host.equals(host_name))
             {
                 boolean isPathMatching = true;
                 String[] url_split = r.requestURI.split("/");
@@ -258,7 +260,7 @@ class HTTPServer implements Runnable{
                 {
                     isPathMatching = false;
                 }
-                if(server.routes.get(i).method.equals(r.method) &&
+                if(Server.routes.get(i).method.equals(r.method) &&
                         isPathMatching)
                 {
                     InetSocketAddress addr = (InetSocketAddress) sock.getRemoteSocketAddress();
@@ -267,10 +269,10 @@ class HTTPServer implements Runnable{
                     res.setClientSocket(sock);
                     try {
                         boolean halt = false;
-                        if(server.before_filters.get(host_name) != null)
+                        if(Server.before_filters.get(host_name) != null)
                         {
-                            for (int k = 0; k < server.before_filters.get(host_name).size(); k++) {
-                                server.before_filters.get(host_name).get(k).handle(req, res);
+                            for (int k = 0; k < Server.before_filters.get(host_name).size(); k++) {
+                                Server.before_filters.get(host_name).get(k).handle(req, res);
                                 if(res.headers.get("halt-called") != null && res.headers.get("halt-called").equals("true"))
                                 {
                                     halt = true;
@@ -281,17 +283,17 @@ class HTTPServer implements Runnable{
                         res.before_stage = false;
                         if(!halt)
                         {
-                            Object response = server.routes.get(i).route.handle(req, res);
+                            Object response = Server.routes.get(i).route.handle(req, res);
                             if(req.newSession) {
                                 String cookie_val = "SessionID=" + req.session().id() + "; SameSite=Strict; HttpOnly";
                                 if(secure)
                                     cookie_val += "; Secure";
                                 res.header("Set-Cookie", cookie_val);
                             }
-                            if(server.after_filters.get(host_name) != null)
+                            if(Server.after_filters.get(host_name) != null)
                             {
-                                for (int k = 0; k < server.after_filters.get(host_name).size(); k++) {
-                                    server.after_filters.get(host_name).get(k).handle(req, res);
+                                for (int k = 0; k < Server.after_filters.get(host_name).size(); k++) {
+                                    Server.after_filters.get(host_name).get(k).handle(req, res);
                                 }
                             }
                             if(res.writeCalled)
@@ -433,7 +435,7 @@ class HTTPServer implements Runnable{
                 {
                     r.headers.put("host", r.headers.get("host").split(":")[0]);
                 }
-                if(!server.named_hosts.contains(r.headers.get("host"))) {
+                if(!Server.named_hosts.contains(r.headers.get("host"))) {
                     r.headers.put("host", "*");
                 }
                 ByteArrayOutputStream body = new ByteArrayOutputStream();
@@ -476,13 +478,13 @@ class HTTPServer implements Runnable{
                 {
                     String sessionID = r.cookies.get("SessionID");
                     long current_time = System.currentTimeMillis();
-                    if(server.sessionMap.containsKey(sessionID))
+                    if(Server.sessionMap.containsKey(sessionID))
                     {
-                        if(current_time - server.sessionMap.get(sessionID).lastAccessedTime() < 5000
-                                && current_time - server.sessionMap.get(sessionID).creationTime() < server.sessionMap.get(sessionID).getMaxActiveInterval() * 1000)
-                            server.sessionMap.get(sessionID).setLastAccessedTime(current_time);
+                        if(current_time - Server.sessionMap.get(sessionID).lastAccessedTime() < 5000
+                                && current_time - Server.sessionMap.get(sessionID).creationTime() < Server.sessionMap.get(sessionID).getMaxActiveInterval() * 1000)
+                            Server.sessionMap.get(sessionID).setLastAccessedTime(current_time);
                         else
-                            server.sessionMap.remove(sessionID);
+                            Server.sessionMap.remove(sessionID);
                     }
 
                 }
@@ -493,13 +495,13 @@ class HTTPServer implements Runnable{
                                 !Arrays.asList(allowed_methods).contains(p[0])) {
                             sendError(out, 405);
                         }
-                        else if(server.locations.get(r.headers.get("host")) == null)
+                        else if(Server.locations.get(r.headers.get("host")) == null)
                         {
                             sendError(out, 404);
                         }
                         else
                         {
-                            Path path = Paths.get(server.locations.get(r.headers.get("host")) + r.requestURI);
+                            Path path = Paths.get(Server.locations.get(r.headers.get("host")) + r.requestURI);
                             if (Files.exists(path)) {
                             	System.out.println("uri " + r.requestURI);
                                 sendFileResponse(out, stream_out, path, r);
