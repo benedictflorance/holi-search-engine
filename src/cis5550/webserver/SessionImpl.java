@@ -43,7 +43,7 @@ class SessionImpl implements Session {
     // is called; it is sufficient if the session object is removed from the server.
     public void invalidate()
     {
-        Server.sessionMap.remove(session_id);
+        server.sessionMap.remove(session_id);
     }
 
     // The methods below look up the value for a given key, and associate a key with a new value,

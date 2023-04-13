@@ -67,7 +67,7 @@ public class Server {
                 Thread thread = new Thread(){
                     public void run(){
                         try {
-                            Server.run();
+                        	servInstance.run();
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
@@ -103,7 +103,7 @@ public class Server {
             Thread thread = new Thread(){
                 public void run(){
                     try {
-                        Server.run();
+                    	servInstance.run();
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -124,7 +124,7 @@ public class Server {
             Thread thread = new Thread(){
                 public void run(){
                     try {
-                        Server.run();
+                    	servInstance.run();
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -145,7 +145,7 @@ public class Server {
             Thread thread = new Thread(){
                 public void run(){
                     try {
-                        Server.run();
+                    	servInstance.run();
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

@@ -104,22 +104,22 @@ class RequestImpl implements Request {
       if (cookies.get("SessionID") != null) {
         String sessionID = cookies.get("SessionID");
         long current_time = System.currentTimeMillis();
-        if(Server.sessionMap.containsKey(sessionID) &&
-                current_time - Server.sessionMap.get(sessionID).lastAccessedTime() < 5000
-                && current_time - Server.sessionMap.get(sessionID).creationTime() < Server.sessionMap.get(sessionID).getMaxActiveInterval() * 1000)
+        if(server.sessionMap.containsKey(sessionID) &&
+                current_time -server.sessionMap.get(sessionID).lastAccessedTime() < 5000
+                && current_time - server.sessionMap.get(sessionID).creationTime() < server.sessionMap.get(sessionID).getMaxActiveInterval() * 1000)
         {
-          session = Server.sessionMap.get(sessionID);
+          session = server.sessionMap.get(sessionID);
         }
         else {
           session = new SessionImpl(server);
-          Server.sessionMap.put(session.id(), session);
+          server.sessionMap.put(session.id(), session);
           newSession = true;
         }
       }
       else
       {
         session = new SessionImpl(server);
-        Server.sessionMap.put(session.id(), session);
+        server.sessionMap.put(session.id(), session);
         newSession = true;
       }
     }
