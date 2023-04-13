@@ -23,7 +23,7 @@ public class PageRank {
 		String masterAddr = ctx.getKVS().getMaster();
 		
 		try {
-			flameRdd = ctx.fromTable("crawl", row -> row.get("url") + "," + row.get("page"));
+			flameRdd = ctx.fromTable("crawl-678", row -> row.get("url") + "," + row.get("page"));
 			
 			FlamePairRDD stateTable = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0],
 					"1.0,1.0," + extractUrls(s.split(",")[0], s.split(",",2)[1])));
@@ -151,8 +151,12 @@ public class PageRank {
 			    
 			    System.out.println("maxChange" + maxChange);
 			    
+			    transferTable.delete();
+			    stateTable.delete();
 			    // Replace old state table with new one
 			    stateTable = newStateTable;
+			    
+			    
 
 			    // Check for convergence
 			    if (Double.parseDouble(maxChange) < convergenceThreshold) {
@@ -161,6 +165,9 @@ public class PageRank {
 				
 			}
 			
+			
+			KVSClient kvs1 = new KVSClient(masterAddr);
+			kvs1.persist("pageranks");
 			stateTable.flatMapToPair(t -> {
 			    String url = t._1();
 			    String[] fields = t._2().split(",");
@@ -191,8 +198,14 @@ public class PageRank {
 		        try {
 		        	String url = matcher.group(1);
 		        	String normalizedUrl = 	UrlNormalizer.normalize(baseUrl, url);
+		        	
 					if(normalizedUrl!=null) { 
-						urls.add(normalizedUrl);
+						if(normalizedUrl.contains(".."))
+							continue;
+						if(endsWithUnwanted(removeParams(normalizedUrl))) {
+			        		continue;
+			        	}
+						urls.add(removeParams(normalizedUrl));
 					}
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
@@ -204,5 +217,38 @@ public class PageRank {
 		    String extractedUrls = String.join(",", urls);
 		    return extractedUrls;
 		}
+	
+	public static boolean endsWithUnwanted(String uri) {
+		// String[] unwantedList = {".jpg", ".jpeg", ".gif", ".png", ".txt", ".pdf", ".aspx", ".asp", ".cfml", ".cfm", ".js", ".css", ".c", ".cpp", ".cc", ".java", ".sh", ".obj", ".o", ".h", ".hpp", ".json", ".env", ".class", ".php", ".php3", ".py"};
+		// java.util.Set<String> unwanted = new java.util.HashSet<String>();
+		if (uri.length() == 0) {
+			return false;
+		}
+		if (uri.contains("@")) {
+			return true;
+		}
+		if (uri.contains("javascript:")) {
+			return true;
+		}
+		if (!uri.contains(".")) {
+			return false;
+		}
+		// If the url contains a . and ends not with .html, we don't want the uri
+		if (!uri.endsWith(".html")) {
+			return true;
+		}
+		return false;
+	}
+	
+	public static String removeParams(String uri) {
+		int i = 0;
+		while (i < uri.length()) {
+			if (uri.charAt(i) == '#' || uri.charAt(i) == '?' || uri.charAt(i) == '=') {
+				break;
+			}
+			i++;
+		}
+		return uri.substring(0, i);
+	}
 
 }
