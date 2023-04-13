@@ -32,7 +32,7 @@ public class MemTable implements Table {
 	public synchronized Row getRow(String rKey) {
 		return data.get(rKey);
 	}
-	public synchronized Row getRowForDisplay(String rKey) {
+	public Row getRowForDisplay(String rKey) {
 		return getRow(rKey);
 	}
 	public boolean persistent() {
