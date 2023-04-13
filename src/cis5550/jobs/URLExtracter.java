@@ -125,7 +125,7 @@ public class URLExtracter {
 		if (uri.length() == 0) {
 			return false;
 		}
-		if (uri.contains("@")) {
+		if (uri.contains("@") || uri.contains("&") || uri.contains("{") || uri.contains("}") || uri.contains("=") || uri.contains("?") || uri.contains("+")) {
 			return true;
 		}
 		if (uri.contains("javascript:")) {

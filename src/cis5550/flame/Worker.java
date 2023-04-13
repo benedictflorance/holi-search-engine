@@ -1,7 +1,6 @@
 package cis5550.flame;
 
 import java.util.*;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.net.*;
 import java.nio.ByteBuffer;
@@ -22,7 +21,6 @@ import cis5550.flame.FlameRDD.StringToPair;
 import cis5550.flame.FlameRDD.StringToPairIterable;
 import cis5550.flame.FlameRDD.StringToString;
 import cis5550.kvs.*;
-import cis5550.webserver.Request;
 
 class Worker extends cis5550.generic.Worker {
 	static ReentrantLock lock = new ReentrantLock();

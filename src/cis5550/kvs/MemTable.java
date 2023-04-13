@@ -20,7 +20,7 @@ public class MemTable implements Table {
 		this.dir = dir;
 		this.data = new ConcurrentHashMap<String, Row>();
 		this.tableFile = new File(dir + "/" + tKey + ".table");
-		this.log = new RandomAccessFile(tableFile, "rw");
+		this.log = new RandomAccessFile(tableFile, "rws");
 	}
 	public synchronized void putRow(String rKey, Row row) throws IOException {
 		data.put(rKey, row);

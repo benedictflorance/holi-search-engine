@@ -46,7 +46,7 @@ public class Crawler {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
 					String rowKey = Hasher.hash(urlString);
-					if (URLCrawled(rowKey, kvs)) {
+					if (URLExtracter.URLCrawled(rowKey, kvs)) {
 						System.out.println("Already crawled");
 						return new ArrayList<String>();
 					}
@@ -107,18 +107,6 @@ public class Crawler {
 			return null;
 		}
 		return body;
-	}
-	
-	public static boolean URLCrawled(String urlHash, KVSClient kvs) {
-		try {
-			if (kvs.existsRow("crawl", urlHash)) {
-				return true;
-			}
-			return false;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return true;
-		}
 	}
 
 	public static boolean accessTimeLimitPassed(String hostKey, KVSClient kvs) {

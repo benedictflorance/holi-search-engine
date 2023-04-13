@@ -285,6 +285,7 @@ public class Worker extends cis5550.generic.Worker {
 			updateAccessTime();
 			if (!tables.containsKey(req.params("table"))) {
 				res.status(404, "Not Found");
+				System.out.println(req.params("table") + "Not Found");
 				return "Not Found";
 			}
 			Table t = tables.get(req.params("table"));

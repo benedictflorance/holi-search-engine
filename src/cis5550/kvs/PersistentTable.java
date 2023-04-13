@@ -19,7 +19,7 @@ public class PersistentTable implements Table {
 		this.index = new ConcurrentHashMap<String, Long>();
 		this.tableFile = new File(dir + "/" + tKey + ".table");
 		this.tableFile.createNewFile();
-		this.log = new RandomAccessFile(tableFile, "rw");
+		this.log = new RandomAccessFile(tableFile, "rws");
 		this.id = tKey;
 		this.dir = dir;
 	}
@@ -27,7 +27,7 @@ public class PersistentTable implements Table {
 	public PersistentTable(String tKey, String dir, File logFile) throws Exception {
 		index = new ConcurrentHashMap<String, Long>();
 		this.tableFile = logFile;
-		this.log = new RandomAccessFile(tableFile, "rw");
+		this.log = new RandomAccessFile(tableFile, "rws");
 		this.id = tKey;
 		this.dir = dir;
 		recover();
@@ -54,21 +54,24 @@ public class PersistentTable implements Table {
 		}
 	}
 
-	public synchronized void putRow(String rKey, Row row) throws Exception {
-		try {
-			long offset = log.length();
-			log.seek(offset);
-			log.write(row.toByteArray());
-			log.writeBytes("\n");
-			index.put(rKey, offset);
-		} catch (Exception e) {
-			e.printStackTrace();
+	public void putRow(String rKey, Row row) throws Exception {
+		synchronized (log){
+			try {
+					long offset = log.length();
+					log.seek(offset);
+					log.write(row.toByteArray());
+					log.writeBytes("\n");
+					index.put(rKey, offset);
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 	}
 
 
-	public Row getRowForDisplay(String rKey) throws Exception {
+	public synchronized Row getRowForDisplay(String rKey) throws Exception {
 		if (!index.containsKey(rKey)) {
 			return null;
 		}
@@ -84,13 +87,14 @@ public class PersistentTable implements Table {
 		}
 		long pos = index.get(rKey);
 		Row r = null;
-		try {
-			log.seek(pos);
-			r = Row.readFrom(log);
-		} catch (Exception e) {
-			e.printStackTrace();
+		synchronized (log) {
+			try {
+				log.seek(pos);
+				r = Row.readFrom(log);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
-		
 		return r;
 	}
 
@@ -102,11 +106,11 @@ public class PersistentTable implements Table {
 		return index.size();
 	}
 	
-	public Set<String> getRowKeys() {
+	public synchronized Set<String> getRowKeys() {
 		return index.keySet();
 	}
 	
-	public String getKey() {
+	public synchronized String getKey() {
 		return id;
 	}
 	
@@ -121,14 +125,15 @@ public class PersistentTable implements Table {
 		success = tableFile.renameTo(newTable);
 		return success;
 	}
-	public synchronized void delete() throws IOException {
+	public void delete() throws IOException {
 		log.close();
 		tableFile.delete();
+		
 	}
 	public synchronized void collectGarbage() throws Exception {
 		log.seek(0);
         boolean optimizationNeeded = false;
-        Set<String> rows = new HashSet<>();
+        Set<String> rows = new HashSet<String>();
         while (true) {
             Row row = Row.readFrom(log);
             if(row == null)
@@ -138,13 +143,14 @@ public class PersistentTable implements Table {
                 break;
             }
             rows.add(row.key());
-        }
+        } 
         if (!optimizationNeeded) {
         	return;
         }
+        System.out.println("Garbage collection needed");
 		File newTable = new File(dir + "/" + id + ".temp");
 		try {
-			RandomAccessFile newLog = new RandomAccessFile(newTable, "rw");
+			RandomAccessFile newLog = new RandomAccessFile(newTable, "rws");
 			Map<String, Long> newIndex = new ConcurrentHashMap<String, Long>();
 			for (String rKey : index.keySet()) {
 				long pos = index.get(rKey);
@@ -164,7 +170,6 @@ public class PersistentTable implements Table {
 			newTable.renameTo(rename);
 		} catch (Exception e) {
 			newTable.delete();
-			return;
 		}
 		
 	}

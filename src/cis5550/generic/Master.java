@@ -1,21 +1,12 @@
 package cis5550.generic;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-
-import cis5550.tools.Logger;
-
 import static cis5550.webserver.Server.*;
 
 public class Master {
-	
-	private static final Logger logger= Logger.getLogger(Master.class);
-	public static Map<String,Worker> activeWorkers = new ConcurrentHashMap<String, Worker> ();
+	public static Map<String, Worker> activeWorkers = new ConcurrentHashMap<String, Worker>();
 	
 	public static Vector<String> getWorkers(){
 		Vector<String> result = new Vector<String>();
@@ -44,7 +35,7 @@ public class Master {
 	
 	public static void registerRoutes() throws Exception {
 		
-		get("/ping", (req, res) ->{ 
+		get("/ping", (req, res) ->{
 			if(req.queryParams("id")==null || req.queryParams("port")==null) {
 				res.status(400, "Bad Request");
 				return "400";
@@ -55,7 +46,7 @@ public class Master {
 				worker.setPort(req.queryParams("port"));
 				worker.setIp(req.ip());
 				worker.setLastAccessedTime(System.currentTimeMillis());
-				activeWorkers.replace(req.queryParams("id"), worker); 
+				// activeWorkers.replace(req.queryParams("id"), worker); 
 				
 			}
 			else {
@@ -79,10 +70,9 @@ public class Master {
 	}
 	
 	public static String convertWorkerstoString() {
-		String result = "";
-		result += activeWorkers.size()+"\n";
+		String result = String.valueOf(activeWorkers.size()) + "\n";
 		for (Map.Entry<String,Worker> entry : activeWorkers.entrySet()) 
-            result+=entry.getKey()+","+ entry.getValue().getIp()+ ":"+ entry.getValue().getPort()+"\n";
+            result += entry.getKey()+","+ entry.getValue().getIp()+ ":"+ entry.getValue().getPort()+"\n";
 		
 		return result;
 	}
