@@ -1,5 +1,6 @@
 package cis5550.generic;
 
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -16,7 +17,8 @@ public class Worker {
 			public void run() {
 				while (true) {
 					try {
-						url.getContent();
+						HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+						conn.getResponseCode();
 						Thread.sleep(5000);
 					} catch (Exception e) {
 						continue;
