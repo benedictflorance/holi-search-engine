@@ -6,3 +6,5 @@ src/worker1/id
 worker1/
 *.table
 .settings/org.eclipse.ltk.core.refactoring.prefs
+src/worker2/id
+*.icloud

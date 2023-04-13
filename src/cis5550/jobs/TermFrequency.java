@@ -22,10 +22,14 @@ import cis5550.tools.Hasher;
 
 public class TermFrequency {
 	
+	public static String CRAWL = "crawl-678";
+	public static String INDEX = "index-678";
+	public static String WD_METRIC = "wd-metric";
+	
 	public static void run(FlameContext ctx, String[] args) {
 		try {
 			
-			FlameRDD flameRdd = ctx.fromTable("crawl-190", row -> row.get("url") + "," + row.get("page"));
+			FlameRDD flameRdd = ctx.fromTable(CRAWL, row -> row.get("url") + "," + row.get("page"));
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
 			
 			flamePairRdd.flatMapToPair(urlPage -> {
@@ -48,8 +52,8 @@ public class TermFrequency {
 		            // Remove HTML tags
 		            page = page.replaceAll("<.*?>", " ");
 		            
-//		            // Cut the page size into 1/5th
-//		            page = page.substring(0, page.length()/5);
+		         // Cut the page size into half
+//		            page = page.substring(0, page.length()/2);
 		            
 
 		            //convert to lowercase
@@ -89,7 +93,7 @@ public class TermFrequency {
 	            		wordPositions.get(word).add(pos);
 	            		pos++;
 	            	}
-	            }
+		        }
 	           
 	            pos = 1;
 	            //also added the stemmed version of all words
@@ -132,6 +136,8 @@ public class TermFrequency {
 	            Set<FlamePair> pairs = new HashSet<>();
 	            for (Map.Entry<String, Integer> entry : tfMap.entrySet()) {
 	            	//put tf + normalizedTf
+	            	if(entry.getKey()==null)
+	            		continue;
 	                pairs.add(new FlamePair(Hasher.hash(url) + ":" + entry.getKey(), String.valueOf(entry.getValue()) +
 	                		"+" +  String.valueOf(normalizedTfMap.get(entry.getKey()))));
 	            }
@@ -146,13 +152,13 @@ public class TermFrequency {
 	        })
 			.saveAsTable("temp");	
 			
-			ctx.getKVS().persist("wd-metric");
+			ctx.getKVS().persist(WD_METRIC);
 			Iterator<Row> tfRow = ctx.getKVS().scan("temp");
 			while(tfRow.hasNext()) {
 				Row currRow = tfRow.next();
 				List<String> currCol = new ArrayList<String>(currRow.columns());
-				ctx.getKVS().put("wd-metric", currRow.key(), "tf", currRow.get(currCol.get(0)).split("\\+")[0]);
-				ctx.getKVS().put("wd-metric", currRow.key(), "normalized-tf", currRow.get(currCol.get(0)).split("\\+")[1]);
+				ctx.getKVS().put(WD_METRIC, currRow.key(), "tf", currRow.get(currCol.get(0)).split("\\+")[0]);
+				ctx.getKVS().put(WD_METRIC, currRow.key(), "normalized-tf", currRow.get(currCol.get(0)).split("\\+")[1]);
 			}
 			
 			ctx.output("OK");

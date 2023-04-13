@@ -20,18 +20,20 @@ import cis5550.kvs.KVSClient;
 import cis5550.kvs.Row;
 
 public class Idf {
+	
+	public static String CRAWL = "crawl-678";
+	public static String INDEX = "index-678";
+	public static String W_METRIC = "w-metric";
 	public static void run(FlameContext ctx, String[] args) {
 		try {
-			//TODO: change names of crawl and index tables!!
 			
-			
-			FlameRDD flameRdd = ctx.fromTable("crawl-190", row -> row.get("url") + "," + row.get("page"));
+			FlameRDD flameRdd = ctx.fromTable(CRAWL, row -> row.get("url") + "," + row.get("page"));
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
 			
 			String masterAddr = ctx.getKVS().getMaster();
 			
 			Integer i =0;
-			Iterator<Row> crawlRows = ctx.getKVS().scan("crawl-190");
+			Iterator<Row> crawlRows = ctx.getKVS().scan(CRAWL);
 			while(crawlRows.hasNext()){
 				i++;
 				crawlRows.next();
@@ -59,8 +61,8 @@ public class Idf {
 	            // Remove HTML tags
 	            page = page.replaceAll("<.*?>", " ");
 	            
-//	            // Cut the page size into 1/5th
-//	            page = page.substring(0, page.length()/5);
+//	            // Cut the page size into 1/2
+//	            page = page.substring(0, page.length()/2);
 	            
 	            // Remove punctuation
 	            page = page.replaceAll("[.,:;!?'\"\\(\\)-]", " ");
@@ -112,11 +114,13 @@ public class Idf {
 					if(word.trim().isEmpty())
 						continue;
 					
-					if(kvs.get("index-190", word, "url")==null)
+					byte[] currIndex = kvs.get(INDEX, word, "url");
+					
+					if(currIndex==null)
 						continue;
 					
 					//Get the number of URLs from index table for that particular word
-					Integer df = new String(kvs.get("index-190", word, "url")).split(",").length + 1;
+					Integer df = new String(currIndex).split(",").length + 1;
 
 //					N is the total number of keys in crawl.table
 					//TODO: check base
@@ -143,13 +147,13 @@ public class Idf {
 			.saveAsTable("temp-1");			
 			
 			KVSClient kvs = new KVSClient(masterAddr);
-			kvs.persist("w-metric");
-			Iterator<Row> tfRow = ctx.getKVS().scan("temp-1");
-			while(tfRow.hasNext()) {
-				Row currRow = tfRow.next();
+			kvs.persist(W_METRIC);
+			Iterator<Row> dfRow = ctx.getKVS().scan("temp-1");
+			while(dfRow.hasNext()) {
+				Row currRow = dfRow.next();
 				List<String> currCol = new ArrayList<String>(currRow.columns());
-				ctx.getKVS().put("w-metric", currRow.key(), "df", currRow.get(currCol.get(0)).split("\\+")[0]);
-				ctx.getKVS().put("w-metric", currRow.key(), "idf", currRow.get(currCol.get(0)).split("\\+")[1]);
+				ctx.getKVS().put(W_METRIC, currRow.key(), "df", currRow.get(currCol.get(0)).split("\\+")[0]);
+				ctx.getKVS().put(W_METRIC, currRow.key(), "idf", currRow.get(currCol.get(0)).split("\\+")[1]);
 			}
 			
 			ctx.output("OK");
