@@ -31,7 +31,7 @@ Flame submit(run this command on a local machine): ``java -cp bin cis5550.flame.
     - page_rank is the the page rank value resulting out of the iterative page rank algorithm.
 
 ### Dependencies:
-- [com.google.code.gson:gson:2.10.1](https://github.com/google/gson) (already jar is added in lib/)
+
 
 ### Build Instructions 
 - To run the ranker, use 
