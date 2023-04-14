@@ -26,7 +26,7 @@ public class Indexer {
 	public static void run(FlameContext ctx, String[] args) {
 		try {
 			
-			FlameRDD flameRdd = ctx.fromTable("crawl-678", row -> row.get("url") + "," + row.get("page"));
+			FlameRDD flameRdd = ctx.fromTable("crawl", row -> row.get("url") + "," + row.get("page"));
 	             
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
 			
@@ -192,16 +192,13 @@ public class Indexer {
 			ctx.output("OK");
 			
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			ctx.output("Exception");
 			e.printStackTrace();
 		} catch (IOException e) {
 			ctx.output("Exception");
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}catch (Exception e) {
 			ctx.output("Exception");
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
