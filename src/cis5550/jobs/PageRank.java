@@ -26,7 +26,7 @@ public class PageRank {
 			flameRdd = ctx.fromTable("crawl-678", row -> row.get("url") + "," + row.get("page"));
 			
 			FlamePairRDD stateTable = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0],
-					"1.0,1.0," + extractUrls(s.split(",")[0], s.split(",",2)[1])));
+					"1.0,1.0," + URLExtractor.extractURLs(s.split(",")[0], s.split(",",2)[1],Constants.blacklist,new KVSClient(masterAddr))));
 			
 			String maxChange = "1.0";
 			Double convergenceThreshold;
