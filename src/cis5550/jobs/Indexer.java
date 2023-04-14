@@ -76,11 +76,11 @@ public class Indexer {
 					trie.buildTrie("src/cis5550/jobs/words_alpha.txt");
 		            int pos = 1;
 		            for (String word : words) {
+	            		if (word.length() > 512) {
+	            			continue;
+	            		}
 		            	if(!word.trim().isEmpty()) {
 		            		word = word.trim();
-		            		if (word.length() > 512) {
-		            			continue;
-		            		}
 	//	            		pairs.add(new FlamePair(word.trim(), url));
 	//	            		if(!new EnglishWordChecker().isEnglishWord(word)) {
 	//		            		System.out.println("Not an English word: " + word);
@@ -102,6 +102,9 @@ public class Indexer {
 		            pos = 1;
 		            //also added the stemmed version of all words
 		            for (String word : words) {
+		            	if (word.length() > 512) {
+		            		continue;
+		            	}
 		            	Stemmer s = new Stemmer();
 		            	if(!word.trim().isEmpty()) {
 		            		word = word.trim();
