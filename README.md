@@ -20,7 +20,6 @@ Flame submit(run this command on a local machine): ``java -cp bin cis5550.flame.
 `javac -cp src/cis5550/lib/jazzy-0.5.2-rtext-1.4.1-2.jar --source-path src src/cis5550/jobs/Indexer.java`
 
 ### Dependencies:
-- https://jazzy.sourceforge.net/ (already jar is added in lib/)
 
 ## Ranker:
 
