@@ -14,9 +14,6 @@ public class PersistentTable implements Table {
 	File tableFile;
 	String id;
 	String dir;
-	byte[] readAheadBuff = new byte[1024 * 1024 * 128]; // 128 MB
-	int seqRead = 0;
-	long lastReadOff = 0;
 	
 	public PersistentTable(String tKey, String dir) throws IOException {
 		this.index = new ConcurrentHashMap<String, Long>();
