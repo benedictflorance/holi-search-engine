@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PersistentTable implements Table {
 	Map<String, Long> index;
@@ -14,6 +15,7 @@ public class PersistentTable implements Table {
 	File tableFile;
 	String id;
 	String dir;
+	
 	
 	public PersistentTable(String tKey, String dir) throws IOException {
 		this.index = new ConcurrentHashMap<String, Long>();
@@ -54,20 +56,16 @@ public class PersistentTable implements Table {
 		}
 	}
 
-	public void putRow(String rKey, Row row) throws Exception {
-		synchronized (log){
-			try {
-					long offset = log.length();
-					log.seek(offset);
-					log.write(row.toByteArray());
-					log.writeBytes("\n");
-					index.put(rKey, offset);
-				
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+	public synchronized void putRow(String rKey, Row row) throws Exception {
+		try {
+			long offset = log.length();
+			log.seek(offset);
+			log.write(row.toByteArray());
+			log.writeBytes("\n");
+			index.put(rKey, offset);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
 	}
 
 
@@ -87,13 +85,11 @@ public class PersistentTable implements Table {
 		}
 		long pos = index.get(rKey);
 		Row r = null;
-		synchronized (log) {
-			try {
-				log.seek(pos);
-				r = Row.readFrom(log);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		try {
+			log.seek(pos);
+			r = Row.readFrom(log);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		return r;
 	}
