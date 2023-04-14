@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PersistentTable implements Table {
 	Map<String, Long> index;
@@ -15,7 +14,9 @@ public class PersistentTable implements Table {
 	File tableFile;
 	String id;
 	String dir;
-	
+	byte[] readAheadBuff = new byte[1024 * 1024 * 128]; // 128 MB
+	int seqRead = 0;
+	long lastReadOff = 0;
 	
 	public PersistentTable(String tKey, String dir) throws IOException {
 		this.index = new ConcurrentHashMap<String, Long>();
@@ -65,6 +66,12 @@ public class PersistentTable implements Table {
 			index.put(rKey, offset);
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public void checkReadAhead(long currOff) {
+		if (currOff - lastReadOff < long (log.length() / 10)) {
+			
 		}
 	}
 
@@ -123,7 +130,8 @@ public class PersistentTable implements Table {
 	}
 	public void delete() throws IOException {
 		log.close();
-		tableFile.delete();
+		System.out.println(tableFile.delete());
+		this.tableFile = null;
 		
 	}
 	public synchronized void collectGarbage() throws Exception {
