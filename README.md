@@ -55,12 +55,12 @@ JSON stringified Java objects, where each object has three fields:
 ``javac --source-path src src/cis5550/webserver/TestServer.java``
 
 ### Run
-``java cis5550.webserver.TestServer``
+``java cis5550.webserver.TestServer <frontend-server port> <ranker ip:port>``
 
 ### Test
-Open browser tab at port ``localhost::8080``
+Open browser tab at frontend-server port
 
 ### Code Explanation
 - TestServer class defined routes:
-    - ``/``: no need to modify, this route simply return the home page
-    - ``/search``: need to modify, the return string should be in a json-like format ([{"key1": "value1", "key2": "value2"},{"key1": "value1", "key2": "value2"},...])
+    - ``/``: this route simply return the home page
+    - ``/search?q=``: need to modify, the return string should be in a json-like format ([{"key1": "value1", "key2": "value2"},{"key1": "value1", "key2": "value2"},...])
