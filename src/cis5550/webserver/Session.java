@@ -9,7 +9,6 @@ public interface Session {
   // System.currentTimeMillis().
   long creationTime();
   long lastAccessedTime();
-  long getMaxActiveInterval();
 
   // Set the maximum time, in seconds, this session can be active without being accessed.
   void maxActiveInterval(int seconds);
@@ -22,6 +21,4 @@ public interface Session {
   // respectively.
   Object attribute(String name);
   void attribute(String name, Object value);
-
-  void setLastAccessedTime(long currentTimeMillis);
 };

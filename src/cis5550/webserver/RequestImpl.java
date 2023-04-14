@@ -11,16 +11,16 @@ class RequestImpl implements Request {
   String url;
   String protocol;
   InetSocketAddress remoteAddr;
-  Map<String, String> headers;
-  Map<String, String> cookies;
-  Map<String, String> queryParams;
-  Map<String, String> params;
+  Map<String,String> headers;
+  Map<String,String> queryParams;
+  Map<String,String> params;
   byte bodyRaw[];
   Server server;
   Session session;
   boolean newSession;
+  static final String CHAR_POOL = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!$";
 
-  RequestImpl(String methodArg, String urlArg, String protocolArg, Map<String, String> headersArg, Map<String, String> queryParamsArg, Map<String, String> paramsArg, InetSocketAddress remoteAddrArg, byte bodyRawArg[], Server serverArg, Map<String, String> cookiesArg) {
+  RequestImpl(String methodArg, String urlArg, String protocolArg, Map<String,String> headersArg, Map<String,String> queryParamsArg, Map<String,String> paramsArg, InetSocketAddress remoteAddrArg, byte bodyRawArg[], Server serverArg, Session sessionArg) {
     method = methodArg;
     url = urlArg;
     remoteAddr = remoteAddrArg;
@@ -29,100 +29,75 @@ class RequestImpl implements Request {
     queryParams = queryParamsArg;
     params = paramsArg;
     bodyRaw = bodyRawArg;
-    session = null;
     server = serverArg;
+    session = sessionArg;
     newSession = false;
-    cookies = cookiesArg;
   }
 
   public String requestMethod() {
-    return method;
+  	return method;
   }
-
-  public void setParams(Map<String, String> paramsArg) {
+  public void setParams(Map<String,String> paramsArg) {
     params = paramsArg;
   }
-
   public int port() {
-    return remoteAddr.getPort();
+  	return remoteAddr.getPort();
   }
-
   public String url() {
-    return url;
+  	return url;
   }
-
   public String protocol() {
-    return protocol;
+  	return protocol;
   }
-
   public String contentType() {
-    return headers.get("content-type");
+  	return headers.get("content-type");
   }
-
   public String ip() {
-    return remoteAddr.getAddress().getHostAddress();
+  	return remoteAddr.getAddress().getHostAddress();
   }
-
   public String body() {
     return new String(bodyRaw, StandardCharsets.UTF_8);
   }
-
   public byte[] bodyAsBytes() {
-    return bodyRaw;
+  	return bodyRaw;
   }
-
   public int contentLength() {
-    return bodyRaw.length;
+  	return bodyRaw.length;
   }
-
   public String headers(String name) {
-    return headers.get(name.toLowerCase());
+  	return headers.get(name.toLowerCase());
   }
-
   public Set<String> headers() {
-    return headers.keySet();
+  	return headers.keySet();
   }
-
   public String queryParams(String param) {
-    return queryParams.get(param);
+  	return queryParams.get(param);
   }
-
   public Set<String> queryParams() {
-    return queryParams.keySet();
+  	return queryParams.keySet();
   }
-
   public String params(String param) {
     return params.get(param);
   }
-
-  public Map<String, String> params() {
+  public Map<String,String> params() {
     return params;
   }
-
   public Session session() {
-    if (session == null) {
-      if (cookies.get("SessionID") != null) {
-        String sessionID = cookies.get("SessionID");
-        long current_time = System.currentTimeMillis();
-        if(server.sessionMap.containsKey(sessionID) &&
-                current_time -server.sessionMap.get(sessionID).lastAccessedTime() < 5000
-                && current_time - server.sessionMap.get(sessionID).creationTime() < server.sessionMap.get(sessionID).getMaxActiveInterval() * 1000)
-        {
-          session = server.sessionMap.get(sessionID);
-        }
-        else {
-          session = new SessionImpl(server);
-          server.sessionMap.put(session.id(), session);
-          newSession = true;
-        }
-      }
-      else
-      {
-        session = new SessionImpl(server);
-        server.sessionMap.put(session.id(), session);
-        newSession = true;
-      }
-    }
-    return session;
+	  if (this.session != null) {
+		  return this.session;  
+	  }
+	  newSession = true;
+	  String newId = generateSessionID();
+	  this.session = new SessionImpl(newId, 300);
+	  return this.session;
   }
+  private String generateSessionID() {
+	  Random rand = new Random();
+	  StringBuilder sb = new StringBuilder();
+	  for (int i = 0; i < 120; i++) {
+		  sb.append(CHAR_POOL.charAt(rand.nextInt(CHAR_POOL.length())));
+	  }
+	  return sb.toString();
+  }
+
 }
