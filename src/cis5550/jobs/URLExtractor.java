@@ -11,7 +11,7 @@ import cis5550.kvs.KVSClient;
 import cis5550.tools.Hasher;
 import cis5550.tools.URLParser;
 
-public class URLExtracter {
+public class URLExtractor {
 
 	public static boolean URLCrawled(String urlHash, KVSClient kvs) {
 		try {
@@ -186,13 +186,15 @@ public class URLExtracter {
 	}
 	
 	public static boolean isBlacklisted(String url, List<String> blacklist) {
-        for (String b : blacklist) {
-        	Pattern pattern = Pattern.compile(b);
-        	Matcher matcher = pattern.matcher(url);
-            if (matcher.find()) {
-                return true;
-            }
-        }
+		if(blacklist!=null) {
+	        for (String b : blacklist) {
+	        	Pattern pattern = Pattern.compile(b);
+	        	Matcher matcher = pattern.matcher(url);
+	            if (matcher.find()) {
+	                return true;
+	            }
+	        }
+		}
         return false;
     }
 	
