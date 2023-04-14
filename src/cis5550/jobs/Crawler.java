@@ -23,7 +23,7 @@ public class Crawler {
 			context.output("No seed found");
 			return;
 		}
-		String seed = URLExtracter.normalizeURL("", args[0]);
+		String seed = URLExtractor.normalizeURL("", args[0]);
 		if (seed == null) {
 			context.output("Seed bad");
 			return;
@@ -39,14 +39,14 @@ public class Crawler {
 			return;
 		}
 		String kvsMasterAddr = context.getKVS().getMaster();
-		List<String> blacklist = new ArrayList<String>(Arrays.asList(URLExtracter.buildBadURLsList()));
+		List<String> blacklist = new ArrayList<String>(Arrays.asList(URLExtractor.buildBadURLsList()));
 		// Start crawling
 		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 1000) {
 				urlQueue = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
 					String rowKey = Hasher.hash(urlString);
-					if (URLExtracter.URLCrawled(rowKey, kvs)) {
+					if (URLExtractor.URLCrawled(rowKey, kvs)) {
 						System.out.println("Already crawled");
 						return new ArrayList<String>();
 					}
@@ -148,7 +148,7 @@ public class Crawler {
 			if (responseCode == 301 || responseCode == 302 || responseCode == 303 || responseCode == 307 || responseCode == 308) {
 				kvs.putRow("crawl", row);
 				String loc = connHead.getHeaderField("Location");
-				String normalized = URLExtracter.normalizeURL(urlString, loc);
+				String normalized = URLExtractor.normalizeURL(urlString, loc);
 				if (normalized == null) {
 					return new ArrayList<String>();
 				}
@@ -208,7 +208,7 @@ public class Crawler {
 			if (responseCode == 301 || responseCode == 302 || responseCode == 303 || responseCode == 307 || responseCode == 308) {
 				kvs.putRow("crawl", row);
 				String loc = connGet.getHeaderField("Location");
-				String normalized = URLExtracter.normalizeURL(urlString, loc);
+				String normalized = URLExtractor.normalizeURL(urlString, loc);
 				if (normalized == null) {
 					return new HashSet<String>();
 				}
@@ -256,7 +256,7 @@ public class Crawler {
 			kvs.putRow("crawl", row);
 			System.out.println("Downloaded page: " + urlString);
 			// Extract more URLs from this page and put them to the back of the queue.
-			return URLExtracter.extractURLs(contentStr, urlString, blacklist, kvs);
+			return URLExtractor.extractURLs(contentStr, urlString, blacklist, kvs);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new HashSet<String>();

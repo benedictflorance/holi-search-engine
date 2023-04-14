@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Constants {
-	public static List<String> blacklist = new ArrayList<String>(Arrays.asList(Crawler.buildBadURLsList()));
+	public static List<String> blacklist = new ArrayList<String>(Arrays.asList(URLExtractor.buildBadURLsList()));
 	public static String CRAWL = "crawl";
 	public static String INDEX = "index";
 }
