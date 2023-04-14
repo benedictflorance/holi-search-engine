@@ -18,7 +18,10 @@ public class Worker {
 				while (true) {
 					try {
 						HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+						conn.setConnectTimeout(5000);
+						conn.setReadTimeout(5000);
 						conn.getResponseCode();
+						conn.disconnect();
 						Thread.sleep(5000);
 					} catch (Exception e) {
 						continue;
