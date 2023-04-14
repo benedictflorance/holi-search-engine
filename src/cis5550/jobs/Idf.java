@@ -81,6 +81,9 @@ public class Idf {
 	            List<String> allWords = new ArrayList<String>();
 	            for (String word : words) {
 	            	if(!word.trim().isEmpty()) {
+	            		if (word.length() > 512) {
+		            		continue;
+		            	}
 		            	word = word.trim();
 		            	if(!trie.containsWord(word)) {
 		            		System.out.println("Not an English word: " + word);
@@ -94,6 +97,9 @@ public class Idf {
 	           
 	            //also added the stemmed version of all words
 	            for (String word : words) {
+	            	if (word.length() > 512) {
+	            		continue;
+	            	}
 	            	Stemmer s = new Stemmer();
 	            	if(!word.trim().isEmpty()) {
 	            		word = word.trim();

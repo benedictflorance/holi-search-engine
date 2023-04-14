@@ -82,6 +82,9 @@ public class TermFrequency {
 		            int pos = 1;
 		            for (String word : words) {
 		            	if(!word.trim().isEmpty()) {
+		            	if (word.length() > 512) {
+			            	continue;
+			            }	
 		            	word = word.trim();
 		            	if(!trie.containsWord(word)) {
 		            		System.out.println("Not an English word: " + word);
@@ -98,6 +101,9 @@ public class TermFrequency {
 	            pos = 1;
 	            //also added the stemmed version of all words
 	            for (String word : words) {
+	            	if (word.length() > 512) {
+	            		continue;
+	            	}
 	            	Stemmer s = new Stemmer();
 	            	if(!word.trim().isEmpty()) {
 	            		word = word.trim();
