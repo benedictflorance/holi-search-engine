@@ -176,6 +176,15 @@ public class URLExtracter {
 		return uri.substring(0, i);
 	}
 	
+	public static String[] buildBadURLsList() {
+		String proto = "http.*:\\/\\/";
+		return new String[] {proto + ".*\\/cgi-bin\\/.*",
+							 proto + ".*\\/javascript\\/.*",
+							 proto + ".*\\.appfinders\\.com*",
+							 proto + "[www.]*youtube\\.com*",
+							 proto + "[www.]*flickr\\.com*"};
+	}
+	
 	public static boolean isBlacklisted(String url, List<String> blacklist) {
         for (String b : blacklist) {
         	Pattern pattern = Pattern.compile(b);

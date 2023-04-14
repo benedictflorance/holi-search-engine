@@ -39,7 +39,7 @@ public class Crawler {
 			return;
 		}
 		String kvsMasterAddr = context.getKVS().getMaster();
-		List<String> blacklist = new ArrayList<String>(Arrays.asList(buildBadURLsList()));
+		List<String> blacklist = new ArrayList<String>(Arrays.asList(URLExtracter.buildBadURLsList()));
 		// Start crawling
 		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 1000) {
 				urlQueue = urlQueue.flatMap(urlString -> {
@@ -273,15 +273,6 @@ public class Crawler {
         }
         return false;
     }
-	
-	public static String[] buildBadURLsList() {
-		String proto = "http.*:\\/\\/";
-		return new String[] {proto + ".*\\/cgi-bin\\/.*",
-							 proto + ".*\\/javascript\\/.*",
-							 proto + ".*\\.appfinders\\.com*",
-							 proto + "[www.]*youtube\\.com*",
-							 proto + "[www.]*flickr\\.com*"};
-	}
 	
 	public static boolean pageIsGood(String content) {
 		// If we can find an HTML lang tag and the language is not en, ignore the page.
