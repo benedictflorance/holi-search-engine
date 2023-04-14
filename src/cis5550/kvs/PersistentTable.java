@@ -68,13 +68,6 @@ public class PersistentTable implements Table {
 			e.printStackTrace();
 		}
 	}
-	
-	public void checkReadAhead(long currOff) {
-		if (currOff - lastReadOff < long (log.length() / 10)) {
-			
-		}
-	}
-
 
 	public synchronized Row getRowForDisplay(String rKey) throws Exception {
 		if (!index.containsKey(rKey)) {
