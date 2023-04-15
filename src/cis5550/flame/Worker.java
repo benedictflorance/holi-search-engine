@@ -397,7 +397,6 @@ class Worker extends cis5550.generic.Worker {
     			if (resultRow == null || resultRow.equals("null")) {
     				continue;
     			}
-    			System.out.println("In from table, resultRow" + resultRow);
     			kvs.put(outputTableName,Hasher.hash(UUID.randomUUID().toString()) ,"value", resultRow);
     		}
     	}

@@ -70,7 +70,7 @@ public class Indexer {
 		            Map<String, Set<Integer>> wordPositions = new ConcurrentHashMap<>();
 		            
 		            Trie trie = new Trie();
-					trie.buildTrie("src/cis5550/jobs/words_alpha.txt");
+					trie.buildTrie("cis5550/jobs/words_alpha.txt");
 		            int pos = 1;
 		            for (String word : words) {
 	            		if (word.length() > 512) {
