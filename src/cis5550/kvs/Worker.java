@@ -29,7 +29,7 @@ public class Worker extends cis5550.generic.Worker {
 		tables = new ConcurrentHashMap<String, Table>();
 		lastReq = System.currentTimeMillis();
 	}
-	
+
 	public String readID(File idFile) {
 		try {
 			FileReader fr = new FileReader(idFile);
@@ -232,7 +232,7 @@ public class Worker extends cis5550.generic.Worker {
 				for (String c : cols) {
 					String val = row.get(c);
 					if (val == null) {
-						ret.append("<td> </td>");
+						ret.append("<td>n/a</td>");
 					} else {
 						ret.append("<td>" + val + "</td>");
 					}
