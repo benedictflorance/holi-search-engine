@@ -59,7 +59,7 @@ public class Worker extends cis5550.generic.Worker {
 			tables.put(req.params("table"), new MemTable(req.params("table"), dir));
 		}
 		Table t = tables.get(req.params("table"));
-		Row row = t.getRowForDisplay(req.params("row"));
+		Row row = t.getRow(req.params("row"));
 		if (row == null) {
 			row = new Row(req.params("row"));
 		}
