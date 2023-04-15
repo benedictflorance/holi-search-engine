@@ -21,8 +21,8 @@ import cis5550.kvs.Row;
 
 public class Idf {
 	
-	public static String CRAWL = "crawl-678";
-	public static String INDEX = "index-678";
+	public static String CRAWL = "crawl-1316";
+	public static String INDEX = "index";
 	public static String W_METRIC = "w-metric";
 	public static void run(FlameContext ctx, String[] args) {
 		try {
@@ -154,12 +154,21 @@ public class Idf {
 			
 			KVSClient kvs = new KVSClient(masterAddr);
 			kvs.persist(W_METRIC);
-			Iterator<Row> dfRow = ctx.getKVS().scan("temp-1");
+			Iterator<Row> dfRow = kvs.scan("temp-1");
 			while(dfRow.hasNext()) {
 				Row currRow = dfRow.next();
 				List<String> currCol = new ArrayList<String>(currRow.columns());
-				ctx.getKVS().put(W_METRIC, currRow.key(), "df", currRow.get(currCol.get(0)).split("\\+")[0]);
-				ctx.getKVS().put(W_METRIC, currRow.key(), "idf", currRow.get(currCol.get(0)).split("\\+")[1]);
+				for(String c: currCol) {
+					if(c.equals("pos"))
+						continue;
+					kvs.put(W_METRIC, currRow.key(), "df", currRow.get(c).split("\\+")[0]);
+					kvs.put(W_METRIC, currRow.key(), "idf", currRow.get(c).split("\\+")[1]);
+				}
+//				if(currCol.get(1)!=null && currCol.get(1).split("\\+").length==2) {
+//					kvs.put(W_METRIC, currRow.key(), "df", currRow.get(currCol.get(1)).split("\\+")[0]);
+//					kvs.put(W_METRIC, currRow.key(), "idf", currRow.get(currCol.get(1)).split("\\+")[1]);
+//				}
+//				System.out.println("Wrong format" + currCol.toString());
 			}
 			
 			ctx.output("OK");
