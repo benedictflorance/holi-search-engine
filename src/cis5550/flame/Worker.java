@@ -150,12 +150,15 @@ class Worker extends cis5550.generic.Worker {
     		scannedTable = kvs.scan(inputTableName, fromKey, null);
     	else
     		scannedTable = kvs.scan(inputTableName, fromKey, toKey);
-    	
+   
     	if(scannedTable!=null) {
     		while(scannedTable.hasNext()) {
     			Row row = scannedTable.next();
     			String accumulatedResult = zeroEle;
     			for(String c: row.columns()) {
+    				if (c.equals("pos")) {
+    					continue;
+    				}
     				accumulatedResult = deserializedLambda.op(accumulatedResult,row.get(c));
     			}
     			kvs.put(outputTableName,row.key() ,"col", accumulatedResult);
@@ -643,6 +646,9 @@ class Worker extends cis5550.generic.Worker {
     			Row row = scannedTable.next();
     			String accumulatedResult = zeroEle;
     			for(String c: row.columns()) {
+    				if (c.equals("pos")) {
+    					continue;
+    				}
     				accumulatedResult = deserializedLambda.op(accumulatedResult, row.get(c));
     			}
     			//ensuring that the accumulated result of all workers go to the same work during the aggregate step
