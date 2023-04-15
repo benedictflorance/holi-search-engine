@@ -23,16 +23,31 @@ public class PageRank {
 		String masterAddr = ctx.getKVS().getMaster();
 		
 		try {
-			flameRdd = ctx.fromTable("crawl", row -> {
+			flameRdd = ctx.fromTable("crawl-simp", row -> {
+				String url = row.get("url");
 				String page = row.get("page");
 				if (page == null) {
 					return null;
 				}
-				return row.get("url") + "," + page;
+				Set<String> urls = URLExtractor.extractURLs(page, url, Constants.blacklist, new KVSClient(masterAddr), false);
+				StringBuilder sb = new StringBuilder();
+				sb.append(url);
+				for (String u : urls) {
+					sb.append(",");
+					sb.append(u);
+				}
+				return sb.toString();
 			});
 			
-			FlamePairRDD stateTable = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0],
-					"1.0,1.0," + URLExtractor.extractURLs(s.split(",")[0], s.split(",",2)[1],Constants.blacklist,new KVSClient(masterAddr), false)));
+			FlamePairRDD stateTable = flameRdd.mapToPair(s -> { 
+				
+				int comma = s.indexOf(",");
+				if (comma < 0) {
+					// If this URL has 0 out-degree.
+					return new FlamePair(s, "1.0,1.0,");
+				}
+				return new FlamePair(s.substring(0, comma), "1.0,1.0," + s.substring(comma + 1));
+			});
 			
 			String maxChange = "1.0";
 			Double convergenceThreshold;
@@ -41,7 +56,6 @@ public class PageRank {
 			else convergenceThreshold = 0.01;
 			
 			Double decayFactor = 0.85;
-			
 			Integer numberOfIterations = 0;
 			while(true) {
 				numberOfIterations++;
@@ -51,15 +65,19 @@ public class PageRank {
 						    String[] urls = Arrays.copyOfRange(tokens, 2, tokens.length);
 						    //check for duplicate links
 						    Set<String> set = new LinkedHashSet<>(Arrays.asList(urls));
+						    List<FlamePair> results = new ArrayList<>();
 						    urls = set.toArray(new String[0]);
-						    
-//						    int n = tokens.length - 2;
 						    int n = urls.length;
+						    if(n==0) {
+						    	results.add(new FlamePair(pair._1(),"0.0"));
+						    	return results;
+						    }
 						    Double rc = Double.parseDouble(tokens[0]);
+						    System.out.println("rc: " + rc);
 //						    Double v = decayFactor * rc / n;
 						    Double v = rc / n;
+						    System.out.println("v: " + v);
 						    
-						    List<FlamePair> results = new ArrayList<>();
 						    Boolean selfLink = false;
 							for (int i = 0; i < urls.length; i++) {
 							   	// check for self link
@@ -123,42 +141,10 @@ public class PageRank {
 			            })
 			            .fold("0.0", (a, b) -> ""+Math.max(Double.parseDouble(a), Double.parseDouble(b)));
 			    
-			    
-			    
-			    if(args.length>1 && args[1]!=null) {
-			    	Double convergencePercentage = Double.parseDouble(args[1])/100;
-				    List<FlamePair> maxChangeList = newStateTable
-				            .flatMapToPair(pair -> {
-				                String[] fields = pair._2().split(",");
-				                double currentRank = Double.parseDouble(fields[0]);
-				                double previousRank = Double.parseDouble(fields[1]);
-				                Set<FlamePair> pairs = new HashSet<>();
-					            pairs.add(new FlamePair(pair._1(), String.valueOf(Math.abs(currentRank - previousRank))));
-					            return new Iterable<FlamePair>() {
-					                @Override
-					                public Iterator<FlamePair> iterator()
-					                {
-					                    return pairs.iterator();
-					                }
-					            };
-				            }).collect();
-				    Integer noOfUrls = maxChangeList.size();
-				    Integer noOfUrlsConverged = 0;
-				    for(FlamePair fp: maxChangeList){
-				    	if(Double.parseDouble(fp._2())<convergenceThreshold) {
-				    		noOfUrlsConverged++;
-				    	}
-				    }
-				    int result = (Double.valueOf(convergencePercentage*noOfUrls)).compareTo(noOfUrlsConverged.doubleValue());
-				    if(result<0) {
-				    	break;
-				    }
-			    }
-			    
 			    System.out.println("maxChange" + maxChange);
 			    
-			    transferTable.delete();
-			    stateTable.delete();
+//			    transferTable.delete();
+//			    stateTable.delete();
 			    // Replace old state table with new one
 			    stateTable = newStateTable;
 			    
@@ -168,9 +154,9 @@ public class PageRank {
 			    if (Double.parseDouble(maxChange) < convergenceThreshold) {
 			        break;
 			    }
+			    
 				
 			}
-			
 			
 			KVSClient kvs1 = new KVSClient(masterAddr);
 			kvs1.persist("pageranks");
@@ -184,7 +170,6 @@ public class PageRank {
 			});
 			
 			System.out.println("Number of Iterations:" + numberOfIterations);
-			
 			ctx.output("OK");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -192,69 +177,4 @@ public class PageRank {
 		}
 
 	}
-	
-	private static String extractUrls(String baseUrl, String pageContent){
-			
-			List<String> urls = new ArrayList<>();
-	//	    Pattern pattern = Pattern.compile("<a\\s+[^>]*href=\"([^\"]+)\"[^>]*>", Pattern.CASE_INSENSITIVE);
-		    Pattern pattern = Pattern.compile("<a\\s+[^>]*href=[\"']([^\"']*)[\"'][^>]*>(.*?)</a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-		    
-		    Matcher matcher = pattern.matcher(pageContent);
-		    while (matcher.find()) {
-		        try {
-		        	String url = matcher.group(1);
-		        	String normalizedUrl = 	UrlNormalizer.normalize(baseUrl, url);
-		        	
-					if(normalizedUrl!=null) { 
-						if(normalizedUrl.contains(".."))
-							continue;
-						if(endsWithUnwanted(removeParams(normalizedUrl))) {
-			        		continue;
-			        	}
-						urls.add(removeParams(normalizedUrl));
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-		    }
-		    
-
-		    String extractedUrls = String.join(",", urls);
-		    return extractedUrls;
-		}
-	
-	public static boolean endsWithUnwanted(String uri) {
-		// String[] unwantedList = {".jpg", ".jpeg", ".gif", ".png", ".txt", ".pdf", ".aspx", ".asp", ".cfml", ".cfm", ".js", ".css", ".c", ".cpp", ".cc", ".java", ".sh", ".obj", ".o", ".h", ".hpp", ".json", ".env", ".class", ".php", ".php3", ".py"};
-		// java.util.Set<String> unwanted = new java.util.HashSet<String>();
-		if (uri.length() == 0) {
-			return false;
-		}
-		if (uri.contains("@")) {
-			return true;
-		}
-		if (uri.contains("javascript:")) {
-			return true;
-		}
-		if (!uri.contains(".")) {
-			return false;
-		}
-		// If the url contains a . and ends not with .html, we don't want the uri
-		if (!uri.endsWith(".html")) {
-			return true;
-		}
-		return false;
-	}
-	
-	public static String removeParams(String uri) {
-		int i = 0;
-		while (i < uri.length()) {
-			if (uri.charAt(i) == '#' || uri.charAt(i) == '?' || uri.charAt(i) == '=') {
-				break;
-			}
-			i++;
-		}
-		return uri.substring(0, i);
-	}
-
 }
