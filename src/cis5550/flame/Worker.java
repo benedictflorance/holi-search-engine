@@ -391,9 +391,10 @@ class Worker extends cis5550.generic.Worker {
     		while(scannedTable.hasNext()) {
     			Row row = scannedTable.next();
     			String resultRow = deserializedLambda.op(row);
-    			if (resultRow == null) {
+    			if (resultRow == null || resultRow.equals("null")) {
     				continue;
     			}
+    			System.out.println("In from table, resultRow" + resultRow);
     			kvs.put(outputTableName,Hasher.hash(UUID.randomUUID().toString()) ,"value", resultRow);
     		}
     	}
