@@ -25,7 +25,7 @@ public class URLExtractor {
 		}
 	}
 	
-	public static Set<String> extractURLs(String content, String baseURL, List<String> blacklist, KVSClient kvs) {
+	public static Set<String> extractURLs(String content, String baseURL, List<String> blacklist, KVSClient kvs, boolean checkDup) {
 	    Pattern pattern = Pattern.compile("<\\s*?a\\s+[^>]*href=\\s*?\"(.*?)\".*?>", Pattern.CASE_INSENSITIVE);
 		Matcher matcher = pattern.matcher(content);
 		Set<String> newURLs = new HashSet<String>();
@@ -43,13 +43,28 @@ public class URLExtractor {
 	    	if (isBlacklisted(newURLNorm, blacklist)) {
 	    		continue;
 	    	}
-	    	String urlHash  = Hasher.hash(newURLNorm);
-	    	if (URLCrawled(urlHash, kvs)) {
+	    	if (countChar(newURLNorm, '/') > 5) {
 	    		continue;
+	    	}
+	    	String urlHash  = Hasher.hash(newURLNorm);
+	    	if (checkDup) {
+	    		if (URLCrawled(urlHash, kvs)) {
+	    			continue;
+	    		}
 	    	}
 	    	newURLs.add(newURLNorm);
 	    }
 	    return newURLs;
+	}
+	
+	public static int countChar(String url, char c) {
+		int count = 0;
+		for (int i = 0; i < url.length(); i++) {
+			if (url.charAt(i) == c) {
+				count++;
+			}
+		}
+		return count;
 	}
 	
 	public static String normalizeURL(String base, String url) {
