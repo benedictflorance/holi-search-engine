@@ -76,11 +76,6 @@ public class URLExtractor {
 		// 3: uri
 		String[] baseP = URLParser.parseURL(base);
 		String[] urlP = URLParser.parseURL(url);
-		if (baseP[1] != null) {
-			if (!baseP[1].startsWith("www.")) {
-				baseP[1] = "www." + baseP[1];
-			}
-		}
 		if (baseP[2] == null) {
 			if (baseP[0] != null) {
 				if (baseP[0].equals("http")) {
@@ -123,9 +118,6 @@ public class URLExtractor {
 		}
 		if (urlP[1] == null) {
 			return null;
-		}
-		if (!urlP[1].startsWith("www.")) {
-			urlP[1] = "www." + urlP[1];
 		}
 		if (urlP[2] == null) {
 			if (urlP[0].equals("http")) {
