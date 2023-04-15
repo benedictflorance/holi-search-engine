@@ -23,7 +23,13 @@ public class PageRank {
 		String masterAddr = ctx.getKVS().getMaster();
 		
 		try {
-			flameRdd = ctx.fromTable("crawl-678", row -> row.get("url") + "," + row.get("page"));
+			flameRdd = ctx.fromTable("crawl", row -> {
+				String page = row.get("page");
+				if (page == null) {
+					return null;
+				}
+				return row.get("url") + "," + page;
+			});
 			
 			FlamePairRDD stateTable = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0],
 					"1.0,1.0," + URLExtractor.extractURLs(s.split(",")[0], s.split(",",2)[1],Constants.blacklist,new KVSClient(masterAddr), false)));
