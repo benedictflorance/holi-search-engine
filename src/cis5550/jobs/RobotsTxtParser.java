@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import cis5550.kvs.KVSClient;
+import cis5550.kvs.Row;
 
 public class RobotsTxtParser {
 	public static boolean parseRules(BufferedReader reader, String url) {
@@ -98,7 +99,7 @@ public class RobotsTxtParser {
 		return parseRules(reader, url);
 	}
 	
-	public static boolean robotPermits(String hostKey, String[] urlParts, String wholeURL, KVSClient kvs) {
+	public static boolean robotPermits(String hostKey, String[] urlParts, String wholeURL, KVSClient kvs, Row row) {
 		try {
 			int responseCode;
 			// Check if robot.txt has been requested for this host.
@@ -113,6 +114,7 @@ public class RobotsTxtParser {
 				// This host has a robots.txt
 				if (!parseRobotsTxt(robot, urlParts[3])) {
 					// robots.txt forbids crawling of this page.
+					kvs.putRow(Constants.CRAWL, row);
 					return false;
 				}
 				return true;
@@ -147,6 +149,7 @@ public class RobotsTxtParser {
 			kvs.put("hosts", hostKey, "robots.txt", robot.getBytes());
 			if (!parseRobotsTxt(robot, urlParts[3])) {
 				// robots.txt forbids crawling of this page.
+				kvs.putRow(Constants.CRAWL, row);
 				return false;
 			}
 			return true;

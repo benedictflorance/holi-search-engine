@@ -32,22 +32,21 @@ public class Crawler {
 		KVSClient kvsClient = context.getKVS();
 		try {
 			urlQueue = context.parallelize(Arrays.asList(seed));
-			kvsClient.persist("crawl");
+			kvsClient.persist(Constants.CRAWL);
 		} catch (Exception e) {
 			e.printStackTrace();
 			context.output("KVStore not working.");
 			return;
 		}
 		String kvsMasterAddr = context.getKVS().getMaster();
-		List<String> blacklist = new ArrayList<String>(Arrays.asList(URLExtractor.buildBadURLsList()));
 		// Start crawling
-		while (urlQueue.count() != 0 && kvsClient.count("crawl") < 1000) {
+		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 10000) {
 				urlQueue = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
 					String rowKey = Hasher.hash(urlString);
 					if (URLExtractor.URLCrawled(rowKey, kvs)) {
-						System.out.println("Already crawled");
+						System.out.println("Already attempted");
 						return new ArrayList<String>();
 					}
 					// Filter bad url
@@ -69,36 +68,43 @@ public class Crawler {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					if (!RobotsTxtParser.robotPermits(hostKey, urlParts, urlString, kvs)) {
+					if (hostLimitReached(hostKey, urlParts[1], kvs, 1000)) {
+						return new ArrayList<String>();
+					}
+					Row row = new Row(rowKey);
+					row.put("url", urlString);
+					if (!RobotsTxtParser.robotPermits(hostKey, urlParts, urlString, kvs, row)) {
 						System.out.println("Robot says no");
 						return new ArrayList<String>();
 					}
 					if (!accessTimeLimitPassed(hostKey, kvs)) {
 						Thread.sleep(1000);
-						return Arrays.asList(new String[] {urlString});
+						// return Arrays.asList(new String[] {urlString});
 					}
-					Row row = new Row(rowKey);
 					System.out.println("Send HEAD for " + urlString);
 					List<String> headRet = sendHead(url, hostKey, rowKey, urlString, kvs, row);
 					if (headRet != null) {
 						return headRet;
 					}
 					System.out.println("Send GET for " + urlString);
-					return sendGet(url, hostKey, rowKey, urlString, kvs, row,blacklist);
+					return sendGet(url, hostKey, rowKey, urlString, kvs, row, Constants.blacklist);
 				});
 		}
 		context.output("OK");
 	}
 	
 	public static String readBody(HttpURLConnection conn) {
-		String body = new String();
+		StringBuilder sb = new StringBuilder();
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			char[] content = new char[1048576];
-			int bytesRead = br.read(content, 0, 1048576); // 1 MB
+			char[] content = new char[1048576]; // 1 MB
+			int bytesRead = br.read(content, 0, content.length);
 			while (bytesRead != -1) {
-				body += new String(content, 0, bytesRead);
-				bytesRead = br.read(content, 0, 1048576); // 1 MB
+				sb.append(content, 0, bytesRead);
+				if (sb.length() > 134217728) { // 128 MB
+					return null;
+				}
+				bytesRead = br.read(content, 0, content.length);
 			}
 			br.close();
 		} catch (Exception e) {
@@ -106,7 +112,7 @@ public class Crawler {
 			e.printStackTrace();
 			return null;
 		}
-		return body;
+		return sb.toString();
 	}
 
 	public static boolean accessTimeLimitPassed(String hostKey, KVSClient kvs) {
@@ -143,10 +149,9 @@ public class Crawler {
 			// Register response code of HEAD request, also register meta-information of the page.
 			responseCode = connHead.getResponseCode();
 			row.put("responseCode",String.valueOf(responseCode));
-			row.put("url", urlString);
 			 // If the response is a redirect, get the destination from body and put it to the back of the queue.
 			if (responseCode == 301 || responseCode == 302 || responseCode == 303 || responseCode == 307 || responseCode == 308) {
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				String loc = connHead.getHeaderField("Location");
 				String normalized = URLExtractor.normalizeURL(urlString, loc);
 				if (normalized == null) {
@@ -156,24 +161,24 @@ public class Crawler {
 			}
 			// If the response is not 200 or if the content is not text/html, do nothing.
 			if (responseCode != 200) {
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new ArrayList<String>();
 			}
 			String contentType = connHead.getContentType();
 			if (contentType == null) {
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new ArrayList<String>();
 			}
 			contentType = contentType.trim().toLowerCase();
 			row.put("contentType", contentType);
 			if (!contentType.startsWith("text/html") || !contentType.contains("utf-8")) {
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new ArrayList<String>();
 			}
 			int contentLength = connHead.getContentLength();
 			row.put("length", String.valueOf(contentLength));
 			if (contentLength > 1024 * 1024 * 512) { // maximum page size: 512 MB
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new ArrayList<String>();
 			}
 			// See if we can filter out pages that are not in English
@@ -206,7 +211,7 @@ public class Crawler {
 			responseCode = connGet.getResponseCode();
 			row.put("responseCode", String.valueOf(responseCode));
 			if (responseCode == 301 || responseCode == 302 || responseCode == 303 || responseCode == 307 || responseCode == 308) {
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				String loc = connGet.getHeaderField("Location");
 				String normalized = URLExtractor.normalizeURL(urlString, loc);
 				if (normalized == null) {
@@ -215,24 +220,24 @@ public class Crawler {
 				return new HashSet<String>(Arrays.asList(new String[] {normalized}));
 			}
 			if (responseCode != 200) {
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new HashSet<String>();
 			}
 			String contentType = connGet.getContentType();
 			if (contentType == null) {
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new HashSet<String>();
 			}
 			row.put("contentType", contentType);
 			contentType = contentType.trim().toLowerCase();
 			if (!contentType.startsWith("text/html") || !contentType.contains("utf-8")) {
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new HashSet<String>();
 			}
 			int contentLength = connGet.getContentLength();
 			row.put("length", String.valueOf(contentLength));
 			if (contentLength > 1024 * 1024 * 512) { // maximum page size: 512 MB
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new HashSet<String>();
 			}
 			String contentLanguage = connGet.getHeaderField("Content-Language");
@@ -244,16 +249,17 @@ public class Crawler {
 			// Finally, read the content of the page and put it to KVS.
 			String contentStr = readBody(connGet);
 			if (contentStr == null) {
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new HashSet<String>();
 			}
 			if (!pageIsGood(contentStr)) {
 				System.out.println("This page is not good.");
-				kvs.putRow("crawl", row);
+				kvs.putRow(Constants.CRAWL, row);
 				return new HashSet<String>();
 			}
 			row.put("page", contentStr);
-			kvs.putRow("crawl", row);
+			kvs.putRow(Constants.CRAWL, row);
+			incrementHost(hostKey, kvs);
 			System.out.println("Downloaded page: " + urlString);
 			// Extract more URLs from this page and put them to the back of the queue.
 			return URLExtractor.extractURLs(contentStr, urlString, blacklist, kvs, true);
@@ -263,16 +269,36 @@ public class Crawler {
 		}
 	}
 	
-	public static boolean isBlacklisted(String url, List<String> blacklist) {
-        for (String b : blacklist) {
-        	Pattern pattern = Pattern.compile(b);
-        	Matcher matcher = pattern.matcher(url);
-            if (matcher.find()) {
-                return true;
-            }
-        }
-        return false;
-    }
+	public static void incrementHost(String hostKey, KVSClient kvs) {
+		try {
+			byte[] numPagesBytes = kvs.get("hosts", hostKey, "numPages");
+			if (numPagesBytes == null) {
+				kvs.put("hosts", hostKey, "numPages", String.valueOf(1));
+				return;
+			}
+			int numPages = Integer.parseInt(new String(numPagesBytes));
+			kvs.put("hosts", hostKey, "numPages", String.valueOf(numPages + 1));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static boolean hostLimitReached(String hostKey, String hostUrl, KVSClient kvs, int limit) {
+		try {
+			byte[] numPagesBytes = kvs.get("hosts", hostKey, "numPages");
+			if (numPagesBytes == null) {
+				return false;
+			}
+			int numPages = Integer.parseInt(new String(numPagesBytes));
+			if (numPages > limit) {
+				return true;
+			}
+			return false;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
 	
 	public static boolean pageIsGood(String content) {
 		// If we can find an HTML lang tag and the language is not en, ignore the page.

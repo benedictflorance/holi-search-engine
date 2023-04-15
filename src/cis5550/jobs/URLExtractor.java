@@ -1,6 +1,7 @@
 package cis5550.jobs;
 
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -75,6 +76,11 @@ public class URLExtractor {
 		// 3: uri
 		String[] baseP = URLParser.parseURL(base);
 		String[] urlP = URLParser.parseURL(url);
+		if (baseP[1] != null) {
+			if (!baseP[1].startsWith("www.")) {
+				baseP[1] = "www." + baseP[1];
+			}
+		}
 		if (baseP[2] == null) {
 			if (baseP[0] != null) {
 				if (baseP[0].equals("http")) {
@@ -117,6 +123,9 @@ public class URLExtractor {
 		}
 		if (urlP[1] == null) {
 			return null;
+		}
+		if (!urlP[1].startsWith("www.")) {
+			urlP[1] = "www." + urlP[1];
 		}
 		if (urlP[2] == null) {
 			if (urlP[0].equals("http")) {
@@ -193,11 +202,27 @@ public class URLExtractor {
 	
 	public static String[] buildBadURLsList() {
 		String proto = "http.*:\\/\\/";
-		return new String[] {proto + ".*\\/cgi-bin\\/.*",
-							 proto + ".*\\/javascript\\/.*",
-							 proto + ".*\\.appfinders\\.com*",
-							 proto + "[www.]*youtube\\.com*",
-							 proto + "[www.]*flickr\\.com*"};
+		return new String[] {"\\/cgi-bin\\/",
+							 "\\/javascript\\/",
+							 "\\.appfinders\\.com",
+							  "[www.]*youtube\\.com",
+							 "[www.]*flickr\\.com",
+							 "\\/weather[?|/]",
+							 "\\/play[?|/]",
+							 "\\/reel[?|/]",
+							 "\\/calendar[?|/]",
+							 "\\/sounds[?|/]",
+							 "\\/iplayer[?|/]",
+							 "\\/sounds[?|/]",
+							 "\\/bin[?|/]",
+							 "\\/search",
+							 "\\/video",
+							 "\\/watch[?|/]",
+							 "email",
+							 "login",
+							 "signup",
+							 "\\/ads[?|/]"
+							 };
 	}
 	
 	public static boolean isBlacklisted(String url, List<String> blacklist) {
@@ -213,4 +238,7 @@ public class URLExtractor {
         return false;
     }
 	
+	public static void main(String[] args) {
+		System.out.println(isBlacklisted("https://www.web.com/ads?outddd=2", java.util.Arrays.asList(buildBadURLsList())));
+	}
 }
