@@ -256,7 +256,7 @@ public class Crawler {
 			kvs.putRow("crawl", row);
 			System.out.println("Downloaded page: " + urlString);
 			// Extract more URLs from this page and put them to the back of the queue.
-			return URLExtractor.extractURLs(contentStr, urlString, blacklist, kvs);
+			return URLExtractor.extractURLs(contentStr, urlString, blacklist, kvs, true);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new HashSet<String>();
