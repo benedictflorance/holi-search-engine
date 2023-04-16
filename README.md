@@ -63,4 +63,30 @@ Open browser tab at frontend-server port
 ### Code Explanation
 - TestServer class defined routes:
     - ``/``: this route simply return the home page
-    - ``/search?q=``: need to modify, the return string should be in a json-like format ([{"key1": "value1", "key2": "value2"},{"key1": "value1", "key2": "value2"},...])
+    - ``/search?q=&p=``: this route expects a json object like below:
+
+```
+class SearchResult {
+    String title;
+    String url;
+    String page_head;
+
+    public SearchResult(String title, String url, String page_head) {
+        this.title = title;
+        this.url = url;
+    }
+}
+
+
+class SearchResultsResponse {
+    List<SearchResult> results;
+    int page;
+    int totalPages;
+
+    public SearchResultsResponse(List<SearchResult> results, int page, int totalPages) {
+        this.results = results;
+        this.page = page;
+        this.totalPages = totalPages;
+    }
+}
+```

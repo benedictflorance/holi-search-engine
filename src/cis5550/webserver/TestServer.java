@@ -10,6 +10,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import com.google.gson.Gson;
 
 import cis5550.webserver.Server.staticFiles;
 import cis5550.webserver.*;
@@ -40,8 +43,17 @@ public class TestServer {
 		});
 		
 		get("/search", (req, res) -> {
+			int currentPage = 1;
+			String pQueryParam = req.queryParams("p");
+			if (pQueryParam != null && pQueryParam.matches("\\d+")) {
+			    currentPage = Integer.parseInt(pQueryParam);
+			    System.out.print(currentPage);
+			}
+			res.header("Content-Type", "text/plain");
+
+			
 			// query the ranker 
-			String urlStr = "http://" + rankerAddr + "/search?q=" + URLEncoder.encode(req.queryParams("q"), StandardCharsets.UTF_8);
+			String urlStr = "http://" + rankerAddr + "/search?q=" + URLEncoder.encode(req.queryParams("q"), StandardCharsets.UTF_8) + "&p=" + Integer.toString(currentPage);
     		URL url = new URL(urlStr);
     		// trigger a HTTP request
     		url.getContent();
@@ -55,19 +67,41 @@ public class TestServer {
     			resp += line;
     		}
 			
-//			String resp = "["
-//             + "{\"title\": \"title 1\", \"text\": \"http://simple.crawltest.cis5550.net:80/Cv1epgGc.html\"},"
-//             + "{\"title\": \"title 2\", \"text\": \"http://simple.crawltest.cis5550.net:80/ItU5tEu.html\"},"
-//             + "{\"title\": \"title 3\", \"text\": \"http://simple.crawltest.cis5550.net:80/LE4.html\"},"
-//             + "{\"title\": \"title 4\", \"text\": \"http://simple.crawltest.cis5550.net:80/\"}"
-//             + "]";
-    		
-			res.header("Content-Type", "text/plain");
-
 			res.write(resp.getBytes());
+			
+//			String resp = "["
+//             + "{\"title\": \"title 1\", \"url\": \"http://simple.crawltest.cis5550.net:80/Cv1epgGc.html\"},"
+//             + "{\"title\": \"title 2\", \"url\": \"http://simple.crawltest.cis5550.net:80/ItU5tEu.html\"},"
+//             + "{\"title\": \"title 3\", \"url\": \"http://simple.crawltest.cis5550.net:80/LE4.html\"},"
+//             + "{\"title\": \"title 4\", \"url\": \"http://simple.crawltest.cis5550.net:80/\"}"
+//             + "]";
+			
+//			int resultsPerPage = 10;
+//			int totalPages = 5;
+
+//			for (int page = 1; page <= totalPages; page++) {
+//				List<SearchResult> searchResults = new ArrayList<>();
+//				for (int i = 1; i <= resultsPerPage; i++) {
+//					String title = "Result " + ((page - 1) * resultsPerPage + i);
+//					String url = "https://example.com/result/" + ((page-1)*resultsPerPage + i);
+//					SearchResult temp = new SearchResult(title, url);
+//					searchResults.add(temp);
+//				}
+//				SearchResultsResponse response = new SearchResultsResponse(searchResults, page, totalPages);
+//				if (page == currentPage) {
+//					String jsonResponse = new Gson().toJson(response);
+//					System.out.println(jsonResponse);
+//					return jsonResponse;
+//				}
+//			}
+    		
+
 			return null;
 		});
+		
+		
 	}
 	
-	
 }
+	
+
