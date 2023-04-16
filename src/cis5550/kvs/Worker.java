@@ -29,7 +29,7 @@ public class Worker extends cis5550.generic.Worker {
 		tables = new ConcurrentHashMap<String, Table>();
 		lastReq = System.currentTimeMillis();
 	}
-	
+
 	public String readID(File idFile) {
 		try {
 			FileReader fr = new FileReader(idFile);
@@ -59,7 +59,7 @@ public class Worker extends cis5550.generic.Worker {
 			tables.put(req.params("table"), new MemTable(req.params("table"), dir));
 		}
 		Table t = tables.get(req.params("table"));
-		Row row = t.getRowForDisplay(req.params("row"));
+		Row row = t.getRow(req.params("row"));
 		if (row == null) {
 			row = new Row(req.params("row"));
 		}
@@ -70,7 +70,7 @@ public class Worker extends cis5550.generic.Worker {
 	}
 	
 	
-	public synchronized String getTable(Request req, Response res) throws Exception {
+	public synchronized String getCol(Request req, Response res) throws Exception {
 		if (!tables.containsKey(req.params("table"))) {
 			res.status(404, "Not Found");
 			return "Not Found";
@@ -88,6 +88,53 @@ public class Worker extends cis5550.generic.Worker {
 		}
 		res.bodyAsBytes(content);
 		res.status(200, "OK");
+		return null;
+	}
+	
+	public String getRow(Request req, Response res) throws Exception {
+		if (!tables.containsKey(req.params("table"))) {
+			res.status(404, "Not Found");
+			return "Not Found";
+		}
+		Table t = tables.get(req.params("table"));
+		Row r = t.getRow(req.params("row"));
+		if (r == null) {
+			res.status(404, "Not Found");
+			return "Not Found";
+		}
+		byte[] content = r.toByteArray();
+		res.status(200, "OK");
+		res.header("Content-Length", String.valueOf(content.length));
+		res.bodyAsBytes(content);
+		return null;
+	}
+	
+	public String getTable(Request req, Response res) throws Exception {
+		if (!tables.containsKey(req.params("table"))) {
+			res.status(404, "Not Found");
+			System.out.println(req.params("table") + "Not Found");
+			return "Not Found";
+		}
+		Table t = tables.get(req.params("table"));
+		String start = req.queryParams("startRow");
+		String end = req.queryParams("endRowExclusive");
+		byte[] lf = {10};
+		for (String rKey : t.getRowKeys()) {
+			if (start != null) {
+				if (rKey.compareTo(start) < 0) {
+					continue;
+				}
+			}
+			if (end != null) {
+				if (rKey.compareTo(end) >= 0) {
+					continue;
+				}
+			}
+			Row r = t.getRow(rKey);
+			res.write(r.toByteArray());
+			res.write(lf);
+		}
+		res.write(lf);
 		return null;
 	}
 	
@@ -232,7 +279,7 @@ public class Worker extends cis5550.generic.Worker {
 				for (String c : cols) {
 					String val = row.get(c);
 					if (val == null) {
-						ret.append("<td> </td>");
+						ret.append("<td>n/a</td>");
 					} else {
 						ret.append("<td>" + val + "</td>");
 					}
@@ -259,56 +306,17 @@ public class Worker extends cis5550.generic.Worker {
 
 		get("/data/:table/:row/:col", (req, res) -> {
 			updateAccessTime();
-			return getTable(req, res);
+			return getCol(req, res);
 		});
 
 		get("/data/:table/:row",  (req, res) -> {
 			updateAccessTime();
-			if (!tables.containsKey(req.params("table"))) {
-				res.status(404, "Not Found");
-				return "Not Found";
-			}
-			Table t = tables.get(req.params("table"));
-			Row r = t.getRow(req.params("row"));
-			if (r == null) {
-				res.status(404, "Not Found");
-				return "Not Found";
-			}
-			byte[] content = r.toByteArray();
-			res.status(200, "OK");
-			res.header("Content-Length", String.valueOf(content.length));
-			res.bodyAsBytes(content);
-			return null;
+			return getRow(req, res);
 		});
 		
 		get("/data/:table", (req, res) -> {
 			updateAccessTime();
-			if (!tables.containsKey(req.params("table"))) {
-				res.status(404, "Not Found");
-				System.out.println(req.params("table") + "Not Found");
-				return "Not Found";
-			}
-			Table t = tables.get(req.params("table"));
-			String start = req.queryParams("startRow");
-			String end = req.queryParams("endRowExclusive");
-			byte[] lf = {10};
-			for (String rKey : t.getRowKeys()) {
-				if (start != null) {
-					if (rKey.compareTo(start) < 0) {
-						continue;
-					}
-				}
-				if (end != null) {
-					if (rKey.compareTo(end) >= 0) {
-						continue;
-					}
-				}
-				Row r = t.getRow(rKey);
-				res.write(r.toByteArray());
-				res.write(lf);
-			}
-			res.write(lf);
-			return null;
+			return getTable(req, res);
 		});
 		
 		get("/count/:table", (req, res) -> {
@@ -367,7 +375,7 @@ public class Worker extends cis5550.generic.Worker {
 			while (true) {
 				try {
 					sleep(60000);
-					if (System.currentTimeMillis() - lastReq > 60000) {
+					if (System.currentTimeMillis() - lastReq > 30000) {
 						for (String tKey : tables.keySet()) {
 							tables.get(tKey).collectGarbage();
 						}

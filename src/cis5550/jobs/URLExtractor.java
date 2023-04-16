@@ -1,6 +1,7 @@
 package cis5550.jobs;
 
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,7 +26,7 @@ public class URLExtractor {
 		}
 	}
 	
-	public static Set<String> extractURLs(String content, String baseURL, List<String> blacklist, KVSClient kvs) {
+	public static Set<String> extractURLs(String content, String baseURL, List<String> blacklist, KVSClient kvs, boolean checkDup) {
 	    Pattern pattern = Pattern.compile("<\\s*?a\\s+[^>]*href=\\s*?\"(.*?)\".*?>", Pattern.CASE_INSENSITIVE);
 		Matcher matcher = pattern.matcher(content);
 		Set<String> newURLs = new HashSet<String>();
@@ -43,13 +44,28 @@ public class URLExtractor {
 	    	if (isBlacklisted(newURLNorm, blacklist)) {
 	    		continue;
 	    	}
-	    	String urlHash  = Hasher.hash(newURLNorm);
-	    	if (URLCrawled(urlHash, kvs)) {
+	    	if (countChar(newURLNorm, '/') > 5) {
 	    		continue;
+	    	}
+	    	String urlHash  = Hasher.hash(newURLNorm);
+	    	if (checkDup) {
+	    		if (URLCrawled(urlHash, kvs)) {
+	    			continue;
+	    		}
 	    	}
 	    	newURLs.add(newURLNorm);
 	    }
 	    return newURLs;
+	}
+	
+	public static int countChar(String url, char c) {
+		int count = 0;
+		for (int i = 0; i < url.length(); i++) {
+			if (url.charAt(i) == c) {
+				count++;
+			}
+		}
+		return count;
 	}
 	
 	public static String normalizeURL(String base, String url) {
@@ -178,11 +194,27 @@ public class URLExtractor {
 	
 	public static String[] buildBadURLsList() {
 		String proto = "http.*:\\/\\/";
-		return new String[] {proto + ".*\\/cgi-bin\\/.*",
-							 proto + ".*\\/javascript\\/.*",
-							 proto + ".*\\.appfinders\\.com*",
-							 proto + "[www.]*youtube\\.com*",
-							 proto + "[www.]*flickr\\.com*"};
+		return new String[] {"\\/cgi-bin\\/",
+							 "\\/javascript\\/",
+							 "\\.appfinders\\.com",
+							  "[www.]*youtube\\.com",
+							 "[www.]*flickr\\.com",
+							 "\\/weather[?|/]",
+							 "\\/play[?|/]",
+							 "\\/reel[?|/]",
+							 "\\/calendar[?|/]",
+							 "\\/sounds[?|/]",
+							 "\\/iplayer[?|/]",
+							 "\\/sounds[?|/]",
+							 "\\/bin[?|/]",
+							 "\\/search",
+							 "\\/video",
+							 "\\/watch[?|/]",
+							 "email",
+							 "login",
+							 "signup",
+							 "\\/ads[?|/]"
+							 };
 	}
 	
 	public static boolean isBlacklisted(String url, List<String> blacklist) {
@@ -198,4 +230,7 @@ public class URLExtractor {
         return false;
     }
 	
+	public static void main(String[] args) {
+		System.out.println(isBlacklisted("https://www.web.com/ads?outddd=2", java.util.Arrays.asList(buildBadURLsList())));
+	}
 }

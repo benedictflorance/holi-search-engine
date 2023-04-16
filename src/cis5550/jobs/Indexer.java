@@ -26,7 +26,7 @@ public class Indexer {
 	public static void run(FlameContext ctx, String[] args) {
 		try {
 			
-			FlameRDD flameRdd = ctx.fromTable("crawl", row -> row.get("url") + "," + row.get("page"));
+			FlameRDD flameRdd = ctx.fromTable("crawl-1316", row -> row.get("url") + "," + row.get("page"));
 	             
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
 			
@@ -69,11 +69,8 @@ public class Indexer {
 		            // Create (word, url) pairs with positions
 		            Map<String, Set<Integer>> wordPositions = new ConcurrentHashMap<>();
 		            
-		            // TODO: check - Remove duplicates
-	//	            Set<String> uniqueWords = new HashSet<>(Arrays.asList(words));
-		            
 		            Trie trie = new Trie();
-					trie.buildTrie("src/cis5550/jobs/words_alpha.txt");
+					trie.buildTrie("cis5550/jobs/words_alpha.txt");
 		            int pos = 1;
 		            for (String word : words) {
 	            		if (word.length() > 512) {
@@ -81,7 +78,6 @@ public class Indexer {
 	            		}
 		            	if(!word.trim().isEmpty()) {
 		            		word = word.trim();
-	//	            		pairs.add(new FlamePair(word.trim(), url));
 	//	            		if(!new EnglishWordChecker().isEnglishWord(word)) {
 	//		            		System.out.println("Not an English word: " + word);
 	//		            		continue;
@@ -125,17 +121,8 @@ public class Indexer {
 		            for (Map.Entry<String, Set<Integer>> entry : wordPositions.entrySet()) {
 		                String word = entry.getKey();
 		                Set<Integer> positions = entry.getValue();
-		                StringBuilder sb = new StringBuilder();
-		                for (Integer position : positions) {
-		                	sb.append(position).append(" ");
-		                }
-		                String result = sb.toString().trim();
-	//	                pairs.add(new FlamePair(word, url + ":" + result));
 		                pairs.add(new FlamePair(word, url));
 		            }
-		            
-		            
-		            
 		            return new Iterable<FlamePair>() {
 		                @Override
 		                public Iterator<FlamePair> iterator()
@@ -156,25 +143,7 @@ public class Indexer {
 			        return u1;
 			    } else {
 			        List<String> urlList = new ArrayList<>(Arrays.asList((u1 + "," + u2).split(",")));
-			        
-			        // Flatten the list of URLs into a single string
-//			        String urlsString = String.join(", ", urlList);
-			        
-//			        // Split the string of URLs by commas and zero or more spaces
-//			        String[] urls = urlsString.split(",\\s*");
-//			        
-//			        // Sort urls based on how many spaces each one has, in descending order
-//			        Arrays.sort(urls, new Comparator<String>() {
-//			            public int compare(String url1, String url2) {
-//			                int spaceCount1 = url1.length() - url1.replaceAll("\\s+", "").length();
-//			                int spaceCount2 = url2.length() - url2.replaceAll("\\s+", "").length();
-//			                return spaceCount2 - spaceCount1;
-//			            }
-//			        });
-//			        return String.join(",", urls);
 			        return String.join(",", urlList);
-
-
 			    }
 			})
 			.saveAsTable("index-temp");

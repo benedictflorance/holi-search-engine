@@ -118,9 +118,10 @@ public class PersistentTable implements Table {
 		success = tableFile.renameTo(newTable);
 		return success;
 	}
-	public void delete() throws IOException {
+	public synchronized void delete() throws IOException {
 		log.close();
-		System.out.println(tableFile.delete());
+		log = null;
+		tableFile.delete();
 		this.tableFile = null;
 		
 	}
