@@ -164,11 +164,11 @@ public class PersistentTable implements Table {
 			}
 			this.log.close();
 			this.tableFile.delete();
-			this.tableFile = newTable;
 			this.log = newLog;
 			this.index = newIndex;
 			File rename = new File(dir + "/" + id + ".table");
 			newTable.renameTo(rename);
+			this.tableFile = rename;
 		} catch (Exception e) {
 			newTable.delete();
 		}
