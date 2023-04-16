@@ -14,6 +14,28 @@ import static java.lang.Math.min;
 import static java.lang.Math.pow;
 
 public class Ranker {
+    static class SearchResult {
+        String title;
+        String url;
+        String page_head;
+
+        public SearchResult() {
+            this.title = null;
+            this.url = null;
+            this.page_head = null;
+        }
+    }
+    static class SearchResultsResponse {
+        List<SearchResult> results;
+        int page;
+        int totalPages;
+
+        public SearchResultsResponse(List<SearchResult> results, int page, int totalPages) {
+            this.results = results;
+            this.page = page;
+            this.totalPages = totalPages;
+        }
+    }
     public static class URLWeights{
         String url;
         Double page_rank;
@@ -60,7 +82,9 @@ public class Ranker {
         Set<String> matching_urls = new HashSet<>();
         for(String word : words_stemmed)
         {
-            String urls = new String(kvs.get("index", word, "tf"));
+            System.out.println(word);
+            byte[] urls_byte = kvs.get("index", word, "tf");
+            String urls = new String(urls_byte);
             if(urls != null)
             {
                 String[] split_urls = urls.split(",");
@@ -139,15 +163,16 @@ public class Ranker {
             }
             else
             {
-                List<Map<String, Object>> urlList = new ArrayList<>();
+                List<SearchResult> urlList = new ArrayList<>();
+
                 for (int i = 0; i < paginatedURLs.get(page).size(); i++) {
                     URLWeights urlWeight = paginatedURLs.get(page).get(i);
 //                    System.out.println("URL: " + urlWeight.url);
 //                    System.out.println("TFIDF Weight: " + urlWeight.tf_idf_weight);
 //                    System.out.println("Page Rank: " + urlWeight.page_rank);
+                    SearchResult sR = new SearchResult();
                     String html_page = new String(kvs.get("crawl", Hasher.hash(urlWeight.url), "page"));
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("url", urlWeight.url);
+                    sR.url = urlWeight.url;
 
                     // Extract the title
                     Pattern titlePattern = Pattern.compile("<title>(.*?)</title>");
@@ -155,7 +180,7 @@ public class Ranker {
                     if (titleMatcher.find()) {
                         String title = titleMatcher.group(1);
                         title = title.substring(0, min(60, title.length()));
-                        item.put("title", title);
+                        sR.title = title;
                     }
                     // Extract the body
                     Pattern bodyPattern = Pattern.compile("<body>(.*?)</body>", Pattern.DOTALL);
@@ -165,19 +190,20 @@ public class Ranker {
                         body = body.replaceAll("\\<.*?\\>", " ");
                         body = body.replaceAll("[.,:;!?'\"()\\-\\p{Cntrl}]", " ");
                         body = body.substring(0, min(body.length(), 300));
-                        item.put("page_head", body);
+                        sR.page_head = body;
                     }
                     String default_text = html_page.replaceAll("\\<.*?\\>", " ")
                             .replaceAll("[.,:;!?'\"()\\-\\p{Cntrl}]", " ");
                     String default_body = default_text.substring(0, min(default_text.length(), 300));
                     String default_title = default_text.substring(0, min(default_text.length(), 60));
-                    if(item.get("title") == null)
-                        item.put("title", default_title);
-                    if(item.get("page_head") == null)
-                        item.put("page_head", default_body);
-                    urlList.add(item);
+                    if(sR.title == null)
+                        sR.title = default_title;
+                    if(sR.page_head == null)
+                        sR.page_head = default_body;
+                    urlList.add(sR);
                 }
-                return new Gson().toJson(urlList);
+                SearchResultsResponse sRR = new SearchResultsResponse(urlList, Integer.parseInt(page), paginatedURLs.size());
+                return new Gson().toJson(sRR);
             }
         });
     }
