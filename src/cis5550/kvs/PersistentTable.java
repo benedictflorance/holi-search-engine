@@ -3,6 +3,7 @@ package cis5550.kvs;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -103,7 +104,7 @@ public class PersistentTable implements Table {
 		return index.keySet();
 	}
 	
-	public synchronized String getKey() {
+	public String getKey() {
 		return id;
 	}
 	
@@ -116,12 +117,17 @@ public class PersistentTable implements Table {
 		id = tKey;
 		File newTable = new File(dir + "/" + id + ".table");
 		success = tableFile.renameTo(newTable);
+		tableFile = newTable;
 		return success;
 	}
 	public synchronized void delete() throws IOException {
 		log.close();
 		log = null;
-		tableFile.delete();
+		try {
+			Files.delete(tableFile.toPath());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		this.tableFile = null;
 		
 	}
