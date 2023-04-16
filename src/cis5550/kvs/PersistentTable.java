@@ -163,12 +163,13 @@ public class PersistentTable implements Table {
 				newIndex.put(r.key, offset);
 			}
 			this.log.close();
+			newLog.close();
 			this.tableFile.delete();
-			this.log = newLog;
 			this.index = newIndex;
 			File rename = new File(dir + "/" + id + ".table");
 			newTable.renameTo(rename);
 			this.tableFile = rename;
+			this.log = new RandomAccessFile(this.tableFile, "rws");
 		} catch (Exception e) {
 			newTable.delete();
 		}
