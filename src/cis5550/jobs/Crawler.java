@@ -40,7 +40,7 @@ public class Crawler {
 		}
 		String kvsMasterAddr = context.getKVS().getMaster();
 		// Start crawling
-		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 10000) {
+		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 1000) {
 				urlQueue = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
