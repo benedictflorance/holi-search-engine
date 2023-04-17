@@ -36,6 +36,9 @@ public class URLExtractor {
 	    	if (newURLNorm == null) {
 	    		continue; 
 	    	}
+	    	if (newURLNorm.length() > 512) {
+	    		continue;
+	    	}
 	    	try {
 	    		new URL(newURLNorm);
 	    	} catch (Exception e) {
@@ -197,23 +200,47 @@ public class URLExtractor {
 		return new String[] {"\\/cgi-bin\\/",
 							 "\\/javascript\\/",
 							 "\\.appfinders\\.com",
-							  "[www.]*youtube\\.com",
-							 "[www.]*flickr\\.com",
+							 "(www\\.)*?twitter\\.com",
+							 "(www\\.)*?facebook\\.com",
+							 "(www\\.)*?pinterest\\.com",
+							 "(www\\.)*?linkedin\\.com",
+							 "(www\\.)*?tiktok\\.com",
 							 "\\/weather[?|/]",
 							 "\\/play[?|/]",
+							 "\\/player[?|/]",
 							 "\\/reel[?|/]",
 							 "\\/calendar[?|/]",
 							 "\\/sounds[?|/]",
 							 "\\/iplayer[?|/]",
-							 "\\/sounds[?|/]",
 							 "\\/bin[?|/]",
 							 "\\/search",
 							 "\\/video",
 							 "\\/watch[?|/]",
 							 "email",
 							 "login",
+							 "log-in",
+							 "log_in",
 							 "signup",
-							 "\\/ads[?|/]"
+							 "sign-up",
+							 "sign_up",
+							 "signin",
+							 "sign-in",
+							 "sign_in",
+							 "\\/account",
+							 "\\/ads[?|/]",
+							 "\\/advertisement[?|/]",
+							 "www\\..*?[^a-z]+.*?\\.com|edu|io|net|org",
+							 "\\/\\/(?!www\\.).*?[^a-z]+.*?\\.com",
+							 "\\/\\/(?!www\\.).*?[^a-z]+.*?\\.edu",
+							 "\\/\\/(?!www\\.).*?[^a-z]+.*?\\.org",
+							 "\\/\\/(?!www\\.).*?[^a-z]+.*?\\.io",
+							 "\\/\\/(?!www\\.).*?[^a-z]+.*?\\.net",
+							 "\\/\\/(?!www\\.).*?[^a-z]+.*?\\.gov",
+							 "\\+",
+							 "\\.onion",
+							 "\\/TV",
+							 "\\/tv",
+							 "\\/photo",
 							 };
 	}
 	
@@ -229,8 +256,4 @@ public class URLExtractor {
 		}
         return false;
     }
-	
-	public static void main(String[] args) {
-		System.out.println(isBlacklisted("https://www.web.com/ads?outddd=2", java.util.Arrays.asList(buildBadURLsList())));
-	}
 }
