@@ -1,5 +1,6 @@
 package cis5550.kvs;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 public interface Table {
@@ -13,4 +14,5 @@ public interface Table {
 	boolean rename(String tKey) throws IOException;
 	void delete() throws Exception;
 	void collectGarbage() throws Exception; 
+	public void putBatch(List<Row> batch) throws IOException;
 }

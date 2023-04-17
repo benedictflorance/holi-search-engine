@@ -1,9 +1,13 @@
 package cis5550.kvs;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.net.*;
 import java.io.*;
+
+import cis5550.flame.FlamePair;
 import cis5550.tools.HTTP;
+import cis5550.tools.Hasher;
 
 public class KVSClient implements KVS {
 
@@ -242,6 +246,53 @@ public class KVSClient implements KVS {
 
   public void put(String tableName, String row, String column, String value) throws IOException {
     put(tableName, row, column,value.getBytes());
+  }
+  
+  public void putBatch(String tableName, Iterable<FlamePair> data) throws IOException {
+	  if (!haveWorkers)
+	      downloadWorkers();
+	  Map<String, Map<String, Row>> map = new HashMap<>();
+	  for (FlamePair fp : data) {
+		  String kvsWorkerAddr = workers.elementAt(workerIndexForKey(fp._1())).address;
+		  String colKey = Hasher.hash(UUID.randomUUID().toString());
+		  if (!map.containsKey(kvsWorkerAddr)) {
+			  Map<String, Row> newRow = new HashMap<String, Row>();
+			  Row curr = new Row(fp._1());
+			  curr.put(colKey, fp._2());
+			  newRow.put(fp._1(), curr);
+			  map.put(kvsWorkerAddr, newRow);
+		  } else {
+			  Map<String, Row> rows = map.get(kvsWorkerAddr);
+			  if (rows.containsKey(fp._1())) {
+				  rows.get(fp._1()).put(colKey, fp._2());
+			  } else {
+				  Row curr = new Row(fp._1());
+				  curr.put(colKey, fp._2());
+				  rows.put(curr.key(), curr);
+			  }
+		  }
+	  }
+	  for (String kvsAddr : map.keySet()) {
+		  Map<String, Row> rows = map.get(kvsAddr);
+		  byte[] serialized = new byte[0];
+		  for (Entry<String, Row> r : rows.entrySet()) {
+			  byte[] s = r.getValue().toByteArray();
+			  byte[] newArray = new byte[serialized.length + s.length + 1];
+			  for (int i = 0; i < serialized.length; i++) {
+				  newArray[i] = serialized[i];
+			  }
+			  for (int i = 0; i < s.length; i++) {
+				  newArray[i + serialized.length] = s[i];
+			  }
+			  newArray[newArray.length - 1] = (byte) 10;
+			  serialized = newArray; 
+		  }
+		  byte[] response = HTTP.doRequest("PUT", "http://"+kvsAddr+"/data/batch/"+tableName, serialized).body();
+		  String result = new String(response);
+	      if (!result.equals("OK")) 
+	      	throw new RuntimeException("PUT returned something other than OK: "+result+ "("+kvsAddr+")");
+	  }
+	  
   }
 
   public void putRow(String tableName, Row row) throws FileNotFoundException, IOException {

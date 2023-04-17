@@ -1,12 +1,21 @@
 package cis5550.kvs;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PersistentTable implements Table {
@@ -84,8 +93,13 @@ public class PersistentTable implements Table {
 		long pos = index.get(rKey);
 		Row r = null;
 		try {
-			log.seek(pos);
-			r = Row.readFrom(log);
+			RandomAccessFile templog = new RandomAccessFile(tableFile, "rws");
+			templog.seek(pos);
+			FileInputStream fis = new FileInputStream(templog.getFD());
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			r = Row.readFrom(bis);
+			bis.close();
+			templog.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -174,5 +188,47 @@ public class PersistentTable implements Table {
 			newTable.delete();
 		}
 		
+	}
+
+	public synchronized void putBatch(List<Row> batch) {
+		List<Row> onDisk = new ArrayList<Row>();
+		try {
+			for (Row temp : batch) {
+				if (!index.containsKey(temp.key())) {
+					putRow(temp.key(), temp);
+					continue;
+				} else {
+					onDisk.add(temp);
+				}
+			}
+			Collections.sort(onDisk, new java.util.Comparator<Row>() {
+		        @Override
+		        public int compare(Row r1, Row r2) {
+		        	long i1 = index.get(r1.key());
+		        	long i2 = index.get(r2.key());
+		        	if (i1 < i2) {
+		        		return -1;
+		        	} else if (i1 > i2) {
+		        		return 1;
+		        	} else {
+		        		return 0;
+		        	}
+		        }
+			});
+			List<Row> finished = new ArrayList<Row>();
+			for (Row temp : onDisk) {
+				Row original = getRow(temp.key());
+				for (String cKey : temp.columns()) {
+					original.put(cKey, temp.get(cKey));
+				}
+				finished.add(original);
+			}
+			for (Row f : finished) {
+				putRow(f.key(), f);
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
