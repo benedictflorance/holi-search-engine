@@ -34,7 +34,7 @@ public class Server {
 		this.port = port;
 		routingTable = new HashMap<String, HashMap<String, Route>>();
 		sessions = new ConcurrentHashMap<String, Session>();
-		threadPool = new ThreadPool(10000);
+		threadPool = new ThreadPool();
 	}
 
 	public Server(int port, String directory) {
@@ -43,7 +43,7 @@ public class Server {
 		this.port = port;
 		this.directory = directory;
 		routingTable = new HashMap<String, HashMap<String, Route>>();
-		threadPool = new ThreadPool(10000);
+		threadPool = new ThreadPool();
 	}
 	
 	public class ServerTask implements Task {
@@ -582,7 +582,7 @@ public class Server {
 			}
 		});
 		
-		threadPool.spawnWorkers(100);
+		threadPool.spawnWorkers(32);
 		ServerSocket httpSock = new ServerSocket(port);
 		Thread listenHttp = new Thread() {
 			public void run() {

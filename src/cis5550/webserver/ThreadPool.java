@@ -12,8 +12,8 @@ public class ThreadPool {
 	private List<Thread> workers;
 	int numBusy;
 	
-	public ThreadPool(int numQueue) {
-		tasks = new LinkedBlockingQueue<Task>(numQueue);
+	public ThreadPool() {
+		tasks = new LinkedBlockingQueue<Task>();
 		workers = new ArrayList<Thread>();
 		numBusy = 0;
 	}
