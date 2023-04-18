@@ -355,6 +355,22 @@ public class Worker extends cis5550.generic.Worker {
 			return getTable(req, res);
 		});
 		
+		get("/exist/:table/:row", (req, res) -> {
+			updateAccessTime();
+			String tkey = req.params("table");
+			if (!tables.containsKey(tkey)) {
+				res.status(404, "Not Found");
+				return "Not Found";
+			}
+			Table t = tables.get(tkey);
+			if (!t.existRow(req.params("row"))) {
+				res.status(404, "Not Found");
+				return "Not Found";
+			}
+			res.status(200, "OK");
+			return "OK"; 
+		});
+		
 		get("/count/:table", (req, res) -> {
 			updateAccessTime();
 			if (!tables.containsKey(req.params("table"))) {

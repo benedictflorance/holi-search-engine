@@ -84,6 +84,10 @@ public class PersistentTable implements Table {
 		r.put("pos", String.valueOf(pos));
 		return r;
 	}
+	
+	public synchronized boolean existRow(String rKey) {
+		return index.containsKey(rKey);
+	}
 
 	public synchronized Row getRow(String rKey) throws Exception {
 		if (!index.containsKey(rKey)) {

@@ -38,6 +38,9 @@ public class MemTable implements Table {
 	public Row getRowForDisplay(String rKey) {
 		return getRow(rKey);
 	}
+	public boolean existRow(String rKey) {
+		return data.containsKey(rKey);
+	}
 	public boolean persistent() {
 		return false;
 	}

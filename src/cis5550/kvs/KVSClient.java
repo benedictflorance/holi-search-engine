@@ -338,7 +338,7 @@ public class KVSClient implements KVS {
     if (!haveWorkers)
       downloadWorkers();
 
-    HTTP.Response r = HTTP.doRequest("GET", "http://"+workers.elementAt(workerIndexForKey(row)).address+"/data/"+tableName+"/"+java.net.URLEncoder.encode(row, "UTF-8"), null);
+    HTTP.Response r = HTTP.doRequest("GET", "http://"+workers.elementAt(workerIndexForKey(row)).address+"/exist/"+tableName+"/"+java.net.URLEncoder.encode(row, "UTF-8"), null);
     return r.statusCode() == 200;
   }
 

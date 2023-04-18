@@ -17,4 +17,5 @@ public interface Table {
 	void delete() throws Exception;
 	void collectGarbage() throws Exception; 
 	public void putBatch(List<Row> batch, Server server) throws IOException;
+	boolean existRow(String rKey);
 }
