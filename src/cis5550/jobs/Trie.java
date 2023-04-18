@@ -141,6 +141,11 @@ public class Trie {
     	 if (Character.isUpperCase(query.charAt(0))) {
              return true;
          }
+    	 
+    	 //if a query contains both alphabets and digits
+    	 if(query.matches(".*[a-zA-Z].*") && query.matches(".*\\d.*")) {
+    		 return false;
+    	 }
     	 //to account for numbers
     	 if(query.matches(".*\\d.*")) {
     		 return true;
