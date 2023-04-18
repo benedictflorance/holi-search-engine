@@ -36,6 +36,9 @@ public class URLExtractor {
 	    	if (newURLNorm == null) {
 	    		continue; 
 	    	}
+	    	if (newURLNorm.contains(" ")) {
+	    		continue;
+	    	}
 	    	if (newURLNorm.length() > 512) {
 	    		continue;
 	    	}
