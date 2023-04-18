@@ -254,6 +254,9 @@ public class KVSClient implements KVS {
 	  //map from KVS worker addr to row key to Row
 	  Map<String, Map<String, Row>> map = new HashMap<>();
 	  for (FlamePair fp : data) {
+		  if (fp._1().contains(" ")) {
+			  throw new RuntimeException("Row key contains space!");
+		  }
 		  String kvsWorkerAddr = workers.elementAt(workerIndexForKey(fp._1())).address;
 		  String colKey = Hasher.hash(UUID.randomUUID().toString());
 		  if (!map.containsKey(kvsWorkerAddr)) {

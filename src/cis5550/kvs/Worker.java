@@ -64,9 +64,9 @@ public class Worker extends cis5550.generic.Worker {
 			res.status(403, "Forbidden");
 			return "Row key not given.";
 		}
-		if (rKey.length() == 0 || rKey.length() > 1024) {
+		if (rKey.length() == 0 || rKey.length() > 1024 || rKey.contains(" ")) {
 			res.status(403, "Forbidden");
-			return "Row key length not allowed";
+			return "Row key not allowed";
 		}
 		Row row = t.getRow(rKey);
 		if (row == null) {
@@ -77,7 +77,7 @@ public class Worker extends cis5550.generic.Worker {
 			res.status(403, "Forbidden");
 			return "Column key not given.";
 		}
-		if (cKey.length() == 0 || cKey.length() > 1024) {
+		if (cKey.length() == 0 || cKey.length() > 1024 || cKey.contains(" ")) {
 			res.status(403, "Forbidden");
 			return "Column key length not allowed";
 		}
