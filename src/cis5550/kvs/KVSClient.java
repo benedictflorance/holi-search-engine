@@ -251,6 +251,7 @@ public class KVSClient implements KVS {
   public void putBatch(String tableName, Iterable<FlamePair> data) throws IOException {
 	  if (!haveWorkers)
 	      downloadWorkers();
+	  //map from KVS worker addr to row key to Row
 	  Map<String, Map<String, Row>> map = new HashMap<>();
 	  for (FlamePair fp : data) {
 		  String kvsWorkerAddr = workers.elementAt(workerIndexForKey(fp._1())).address;

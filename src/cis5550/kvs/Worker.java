@@ -250,7 +250,7 @@ public class Worker extends cis5550.generic.Worker {
 				Row temp = Row.readFrom(bis);
 				batch.add(temp);
 			}
-			((PersistentTable) t).putBatch(batch);
+			t.putBatch(batch, Server.server);
 			res.status(200, "OK");
 			return "OK";
 		});

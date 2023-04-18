@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import cis5550.webserver.Server;
+
 public class MemTable implements Table {
 	Map<String, Row> data;
 	String id;
@@ -72,7 +74,7 @@ public class MemTable implements Table {
 		return data;
 	}
 	
-	public synchronized void putBatch(List<Row> batch) throws IOException {
+	public synchronized void putBatch(List<Row> batch, Server server) throws IOException {
 		for (Row temp : batch) {
 			if (!data.containsKey(temp.key())) {
 				putRow(temp.key(), temp);
