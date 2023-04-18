@@ -16,14 +16,14 @@ import javax.net.ssl.*;
 import java.security.*;
 
 public class Server {
-	static Server server;
+	public static Server server;
 	static boolean flag;
 	static Map<String, HashMap<String, Route>> routingTable;
 	static Map<String, Session> sessions;
 	private int port;
 	private int securePort;
 	String directory;
-	private ThreadPool threadPool;
+	public ThreadPool threadPool;
 	public int busyThread = 0;
 	public volatile boolean keep_running = true;
 

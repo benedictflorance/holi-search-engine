@@ -26,7 +26,7 @@ public class ThreadPool {
 		}
 		try {
 			// Wait for all threads to be ready before returning.
-			Thread.sleep(3000);
+			Thread.sleep(2000);
 		} catch (InterruptedException e) {
 
 		}
