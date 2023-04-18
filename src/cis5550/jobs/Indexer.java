@@ -51,9 +51,6 @@ public class Indexer {
 		            // Remove HTML tags
 		            page = page.replaceAll("<.*?>", " ");
 		            
-		            // Cut the page size into half
-	//	            page = page.substring(0, page.length()/2);
-		            
 		            // Remove punctuation
 		            page = page.replaceAll("[.,:;!?'\"\\(\\)-]", " ");
 		            
@@ -62,6 +59,9 @@ public class Indexer {
 	
 		            //Remove non ASCII characters
 		            page = page.replaceAll("[^\\p{ASCII}]", " ");
+		            
+//		            // Cut the page size into half
+//		            page = page.substring(0, page.length()/2);
 	
 		            // Split into words
 		            String[] words = page.split("\\s+");
