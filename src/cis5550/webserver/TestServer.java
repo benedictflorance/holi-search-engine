@@ -53,19 +53,19 @@ public class TestServer {
 
 			
 			// query the ranker 
-			String urlStr = "http://" + rankerAddr + "/search?q=" + URLEncoder.encode(req.queryParams("q"), StandardCharsets.UTF_8) + "&p=" + Integer.toString(currentPage);
-    		URL url = new URL(urlStr);
-    		// trigger a HTTP request
-    		url.getContent();
-    		
-    		InputStream in = url.openStream();
-    		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-    		
-    		String resp = "";
-    		String line = null;
-    		while ((line = reader.readLine()) != null) {
-    			resp += line;
-    		}
+			String urlStr = "http://" + rankerAddr + "/search?q=" + URLEncoder.encode(req.queryParams("q"), StandardCharsets.UTF_8) + "&page=" + Integer.toString(currentPage);
+			URL url = new URL(urlStr);
+
+			// trigger a HTTP request and get the response
+			InputStream in = url.openConnection().getInputStream();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+			// read the response and send it back to the client
+			String resp = "";
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+			    resp += line;
+			}
 			
 			res.write(resp.getBytes());
 			
