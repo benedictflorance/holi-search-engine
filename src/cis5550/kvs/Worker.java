@@ -59,12 +59,30 @@ public class Worker extends cis5550.generic.Worker {
 			tables.put(req.params("table"), new MemTable(req.params("table"), dir));
 		}
 		Table t = tables.get(req.params("table"));
-		Row row = t.getRow(req.params("row"));
-		if (row == null) {
-			row = new Row(req.params("row"));
+		String rKey = req.params("row").trim();
+		if (rKey == null) {
+			res.status(403, "Forbidden");
+			return "Row key not given.";
 		}
-		row.put(req.params("col"), req.bodyAsBytes());
-		t.putRow(req.params("row"), row);
+		if (rKey.length() == 0 || rKey.length() > 1024 || rKey.contains(" ")) {
+			res.status(403, "Forbidden");
+			return "Row key not allowed";
+		}
+		Row row = t.getRow(rKey);
+		if (row == null) {
+			row = new Row(rKey);
+		}
+		String cKey = req.params("col").trim();
+		if (cKey == null) {
+			res.status(403, "Forbidden");
+			return "Column key not given.";
+		}
+		if (cKey.length() == 0 || cKey.length() > 1024 || cKey.contains(" ")) {
+			res.status(403, "Forbidden");
+			return "Column key length not allowed";
+		}
+		row.put(cKey, req.bodyAsBytes());
+		t.putRow(rKey, row);
 		res.status(200, "OK");
 		return "OK";
 	}
@@ -216,6 +234,24 @@ public class Worker extends cis5550.generic.Worker {
 			Table t = tables.get(req.params("table"));
 			t.delete();
 			tables.remove(req.params("table"));
+			return "OK";
+		});
+
+		put("/data/batch/:table", (req, res) -> {
+			updateAccessTime();
+			if (!tables.containsKey(req.params("table"))) {
+				res.status(404, "Not Found");
+				return "Not Found";
+			}
+			Table t = tables.get(req.params("table"));
+			InputStream bis = new ByteArrayInputStream(req.bodyAsBytes());
+			List<Row> batch = new ArrayList<Row>();
+			while (bis.available() > 0) {
+				Row temp = Row.readFrom(bis);
+				batch.add(temp);
+			}
+			t.putBatch(batch, Server.server);
+			res.status(200, "OK");
 			return "OK";
 		});
 	}

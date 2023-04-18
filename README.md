@@ -1,6 +1,5 @@
 # Holi Search Engine
 
-## Crawler:
 Run arguments for testing on local machine:<br>
 KVS Master: ``8000``<br>
 KVS Worker: ``8001 localhost:8000``<br>
@@ -13,6 +12,7 @@ KVS Worker: ``sudo java -cp bin cis5550.kvs.Worker 8001 worker1 44.198.182.73:80
 Flame Master: ``sudo java -cp bin cis5550.flame.Master 9000 44.198.182.73:8000``<br>
 Flame Worker: ``sudo java -cp bin cis5550.flame.Worker 9001 44.198.182.73:9000``<br>
 
+## Crawler:
 Flame submit(run this command on a local machine): ``java -cp bin cis5550.flame.FlameSubmit 44.198.182.73:9000 crawler.jar cis5550.jobs.Crawler https://en.wikipedia.org/``<br>
 
 ## Indexer, PageRank, TermFrequency and Idf:

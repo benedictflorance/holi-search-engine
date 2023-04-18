@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import cis5550.webserver.Server;
 
 public class MemTable implements Table {
 	Map<String, Row> data;
@@ -69,5 +72,19 @@ public class MemTable implements Table {
 	
 	public Map<String, Row> getAllData() {
 		return data;
+	}
+	
+	public synchronized void putBatch(List<Row> batch, Server server) throws IOException {
+		for (Row temp : batch) {
+			if (!data.containsKey(temp.key())) {
+				putRow(temp.key(), temp);
+				continue;
+			}
+			Row original = getRow(temp.key());
+			for (String cKey : temp.columns()) {
+				original.put(cKey, temp.get(cKey));
+			}
+			putRow(original.key(), original);
+		}
 	}
 }

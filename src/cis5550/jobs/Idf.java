@@ -76,7 +76,7 @@ public class Idf {
 	            // Split into words
 	            String[] words = page.split("\\s+");
 	            Trie trie = new Trie();
-				trie.buildTrie("src/cis5550/jobs/words_alpha.txt");
+				trie.buildTrie("cis5550/jobs/words_alpha.txt");
 	            
 	            List<String> allWords = new ArrayList<String>();
 	            for (String word : words) {
@@ -164,11 +164,6 @@ public class Idf {
 					kvs.put(W_METRIC, currRow.key(), "df", currRow.get(c).split("\\+")[0]);
 					kvs.put(W_METRIC, currRow.key(), "idf", currRow.get(c).split("\\+")[1]);
 				}
-//				if(currCol.get(1)!=null && currCol.get(1).split("\\+").length==2) {
-//					kvs.put(W_METRIC, currRow.key(), "df", currRow.get(currCol.get(1)).split("\\+")[0]);
-//					kvs.put(W_METRIC, currRow.key(), "idf", currRow.get(currCol.get(1)).split("\\+")[1]);
-//				}
-//				System.out.println("Wrong format" + currCol.toString());
 			}
 			
 			ctx.output("OK");

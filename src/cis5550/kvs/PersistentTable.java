@@ -1,13 +1,21 @@
 package cis5550.kvs;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import cis5550.webserver.Server;
+import cis5550.webserver.ThreadPool.Task;
 
 public class PersistentTable implements Table {
 	Map<String, Long> index;
@@ -84,8 +92,33 @@ public class PersistentTable implements Table {
 		long pos = index.get(rKey);
 		Row r = null;
 		try {
-			log.seek(pos);
-			r = Row.readFrom(log);
+			RandomAccessFile templog = new RandomAccessFile(tableFile, "rws");
+			templog.seek(pos);
+			FileInputStream fis = new FileInputStream(templog.getFD());
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			r = Row.readFrom(bis);
+			bis.close();
+			templog.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return r;
+	}
+	
+	public Row getRowNoLock(String rKey) throws Exception {
+		if (!index.containsKey(rKey)) {
+			return null;
+		}
+		long pos = index.get(rKey);
+		Row r = null;
+		try {
+			RandomAccessFile templog = new RandomAccessFile(tableFile, "rws");
+			templog.seek(pos);
+			FileInputStream fis = new FileInputStream(templog.getFD());
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			r = Row.readFrom(bis);
+			bis.close();
+			templog.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -174,5 +207,107 @@ public class PersistentTable implements Table {
 			newTable.delete();
 		}
 		
+	}
+
+	public synchronized void putBatch(List<Row> batch, Server server) {
+		List<Row> onDisk = new ArrayList<Row>();
+		try {
+			for (Row temp : batch) {
+				if (!index.containsKey(temp.key())) {
+					putRow(temp.key(), temp);
+					continue;
+				} else {
+					onDisk.add(temp);
+				}
+			}
+			/*
+			Collections.sort(onDisk, new java.util.Comparator<Row>() {
+		        @Override
+		        public int compare(Row r1, Row r2) {
+		        	long i1 = index.get(r1.key());
+		        	long i2 = index.get(r2.key());
+		        	if (i1 < i2) {
+		        		return -1;
+		        	} else if (i1 > i2) {
+		        		return 1;
+		        	} else {
+		        		return 0;
+		        	}
+		        }
+			});
+			*/
+			List<Row> finished = new ArrayList<Row>();
+			for (Row temp : onDisk) {
+				Row original = getRow(temp.key());
+				for (String cKey : temp.columns()) {
+					original.put(cKey, temp.get(cKey));
+				}
+				finished.add(original);
+			}
+			for (Row f : finished) {
+				putRow(f.key(), f);
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public List<Row> getParallel(List<Row> toGet, int numThreads, Server server) {
+		List<Row> finished = new ArrayList<Row>();
+		int numThreadsNeeded = Math.min(toGet.size(), numThreads);
+		int each = toGet.size() / numThreads;
+		int last = (toGet.size() / numThreads) + (toGet.size() % numThreads);
+		LinkedBlockingQueue<Row> got = new LinkedBlockingQueue<Row>();
+		for (int i = 0; i < numThreadsNeeded; i++) {
+			GetRowTask t = new GetRowTask(this, got);
+			if (i != numThreadsNeeded - 1) {
+				for (int j = 0; j < each; j++) {
+					t.addRows(toGet.get(each * i + j));
+				}
+			} else {
+				for (int j = 0; j < last; j++) {
+					t.addRows(toGet.get(each * i + j));
+				}
+			}
+			server.threadPool.dispatch(t);
+		}
+		// wait for task to finish
+		for (int i = 0; i < toGet.size(); i++) {
+			try {
+				Row r = got.take();
+				finished.add(r);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return finished;
+	}
+	
+	public class GetRowTask implements Task {
+		PersistentTable t;
+		List<Row> toGet;
+		LinkedBlockingQueue<Row> got;
+		public GetRowTask(Table t, LinkedBlockingQueue<Row> got) {
+			toGet = new ArrayList<Row>();
+			this.got = got;
+			this.t = (PersistentTable) t;
+		}
+		public void addRows(Row r)  {
+			toGet.add(r);
+		}
+		public void run() {
+			try {
+				for (Row r : toGet) {
+					Row original = t.getRowNoLock(r.key());
+					for (String cKey : r.columns()) {
+						original.put(cKey, r.get(cKey));
+					}
+					got.add(original);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

@@ -78,7 +78,7 @@ public class TermFrequency {
 //		            Set<String> uniqueWords = new HashSet<>(Arrays.asList(words));
 		            
 		            Trie trie = new Trie();
-					trie.buildTrie("src/cis5550/jobs/words_alpha.txt");
+					trie.buildTrie("cis5550/jobs/words_alpha.txt");
 		            int pos = 1;
 		            for (String word : words) {
 		            	if(!word.trim().isEmpty()) {

@@ -476,9 +476,11 @@ class Worker extends cis5550.generic.Worker {
     			for(String c: row.columns()) {
     				Iterable<FlamePair> flamePairItr = deserializedLambda.op(new FlamePair(row.key(),row.get(c)));
     				if(flamePairItr!=null) {
-	    				for(FlamePair fp:flamePairItr) {
-	    					kvs.put(outputTableName,fp._1(),Hasher.hash(UUID.randomUUID().toString()), fp._2());
-	    				}
+    					kvs.putBatch(outputTableName, flamePairItr);
+	    				//for(FlamePair fp:flamePairItr) {
+	    				
+	    					// kvs.put(outputTableName,fp._1(),Hasher.hash(UUID.randomUUID().toString()), fp._2());
+	    				//}
     				}
     			}
     		}
