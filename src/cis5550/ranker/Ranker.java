@@ -83,15 +83,16 @@ public class Ranker {
         for(String word : words_stemmed)
         {
             System.out.println(word);
-            byte[] urls_byte = kvs.get("index", word, "tf");
+            byte[] urls_byte = kvs.get("index", word, "url");
             String urls = new String(urls_byte);
             if(urls != null)
             {
                 String[] split_urls = urls.split(",");
                 for(String url : split_urls)
                 {
-                    int lastIndex = url.lastIndexOf(':');
-                    matching_urls.add(url.substring(0, lastIndex));
+//                    int lastIndex = url.lastIndexOf(':');
+//                    System.out.println(url);
+                    matching_urls.add(url);
                 }
             }
         }
@@ -171,6 +172,8 @@ public class Ranker {
 //                    System.out.println("TFIDF Weight: " + urlWeight.tf_idf_weight);
 //                    System.out.println("Page Rank: " + urlWeight.page_rank);
                     SearchResult sR = new SearchResult();
+//                    System.out.println(urlWeight.url);
+//                    System.out.println(Hasher.hash(urlWeight.url));
                     String html_page = new String(kvs.get("crawl", Hasher.hash(urlWeight.url), "page"));
                     sR.url = urlWeight.url;
 
