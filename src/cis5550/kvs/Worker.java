@@ -128,13 +128,17 @@ public class Worker extends cis5550.generic.Worker {
 		byte[] lf = {10};
 		for (String rKey : t.getRowKeys()) {
 			if (start != null) {
-				if (rKey.compareTo(start) < 0) {
-					continue;
+				if (!start.equals("null") && start.length() != 0) {
+					if (rKey.compareTo(start) < 0) {
+						continue;
+					}
 				}
 			}
 			if (end != null) {
-				if (rKey.compareTo(end) >= 0) {
-					continue;
+				if (!end.equals("null") && end.length() != 0) {
+					if (rKey.compareTo(end) >= 0) {
+						continue;
+					}
 				}
 			}
 			Row r = t.getRow(rKey);
