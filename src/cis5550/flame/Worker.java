@@ -74,13 +74,11 @@ class Worker extends cis5550.generic.Worker {
     			Row row = scannedTable.next();
     			Iterable<String> col = deserializedLambda.op(row.get("value"));
     			if(col!=null) {
-    				Iterator<String> colItr = col.iterator();
-    				while(colItr.hasNext()) {
-    					kvs.put(outputTableName,Hasher.hash(UUID.randomUUID().toString()) ,"value", colItr.next());
-    				}
+    				kvs.putBatchRDD(outputTableName, col);
     			}
     		}
     	}
+    	System.out.println("Iteration done");
     	return "OK";
       });
     
