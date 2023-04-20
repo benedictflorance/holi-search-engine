@@ -203,7 +203,7 @@ public class URLExtractor {
 		return new String[] {"\\/cgi-bin\\/",
 							 "\\/javascript\\/",
 							 "\\.appfinders\\.com",
-							 "(www\\.)*?twitter\\.com",
+							 // "(www\\.)*?twitter\\.com",
 							 "(www\\.)*?facebook\\.com",
 							 "(www\\.)*?pinterest\\.com",
 							 "(www\\.)*?linkedin\\.com",
