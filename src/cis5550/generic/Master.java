@@ -19,7 +19,6 @@ public class Master {
 	public static String workerTable() {
 		StringBuilder html = new StringBuilder();
         html.append("<html><head><title>KVS Master</title></head><body>");
-        html.append("<h1>KVS Master</h1>");
         html.append("<table><thead><tr><th>ID</th><th>IP</th><th>Port</th><th>Link</th></tr></thead><tbody>");
         for (Map.Entry<String,Worker> entry : activeWorkers.entrySet()) {
             html.append("<tr>");

@@ -3,6 +3,7 @@ package cis5550.generic;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Random;
 
 public class Worker {
 	private String id;
@@ -63,5 +64,16 @@ public class Worker {
 
 	public void setIp(String ip) {
 		this.ip = ip;
+	}
+	
+	public static String makeID() {
+		Random rand = new Random();
+		StringBuilder sb = new StringBuilder(5);
+		for (int i = 0; i < 5; i++) {
+			char c = (char) (rand.nextInt(26) + 97);
+			sb.append(c);
+		}
+		return sb.toString();
+		
 	}
 }

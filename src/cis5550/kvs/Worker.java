@@ -43,17 +43,6 @@ public class Worker extends cis5550.generic.Worker {
 		return null;
 	}
 	
-	public String makeID() {
-		Random rand = new Random();
-		StringBuilder sb = new StringBuilder(5);
-		for (int i = 0; i < 5; i++) {
-			char c = (char) (rand.nextInt(26) + 97);
-			sb.append(c);
-		}
-		return sb.toString();
-		
-	}
-	
 	public synchronized String putTable(Request req, Response res) throws Exception {
 		if (!tables.containsKey(req.params("table"))) {
 			tables.put(req.params("table"), new MemTable(req.params("table"), dir));
@@ -448,7 +437,7 @@ public class Worker extends cis5550.generic.Worker {
 			if (idFile.exists()) {
 				wk.id = wk.readID(idFile);
 			} else {
-				wk.id = wk.makeID();
+				wk.id = makeID();
 				new File(wk.dir).mkdir();
 				idFile = new File(wk.dir + "/id");
 				FileWriter fw = new FileWriter(idFile);
