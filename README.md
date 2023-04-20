@@ -15,6 +15,9 @@ Flame Worker: ``sudo java -cp bin cis5550.flame.Worker 9001 44.198.182.73:9000``
 ## Crawler:
 Flame submit(run this command on a local machine): ``java -cp bin cis5550.flame.FlameSubmit 44.198.182.73:9000 crawler.jar cis5550.jobs.Crawler https://en.wikipedia.org/``<br>
 
+### Restart crawler:
+To restart the crawler after pausing, find in the kvs worker directory a lengthy-named table that contains column key and url. That's the queue we should continue with. You may safety delete the other lengthy-named table, which should be empty. Start the crawler with the usual setting, but in the arguments provided to the crawler, put in "-t table-name" (Don't put ".table" after the name). The crawler should pick up the queue. The initial crawls may show "Already attempted," and this is normal because we start from the beginning of the queue, which may contain urls we have tried.
+
 ## Indexer, PageRank, TermFrequency and Idf:
 - To compile use 
 `javac cis5550/jobs/Indexer.java && jar -cf xxx.jar cis5550/jobs/xxx.class`
