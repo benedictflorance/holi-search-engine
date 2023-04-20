@@ -125,4 +125,6 @@ public interface FlameRDD {
   public FlameRDD filter(StringToBoolean lambda) throws Exception;
 
   public FlameRDD mapPartitions(IteratorToIterator lambda) throws Exception;
+  
+  public void delete() throws Exception;
 }

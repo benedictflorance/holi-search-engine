@@ -216,5 +216,11 @@ public class FlameRDDImpl implements FlameRDD {
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
 	}
+	
+	public void delete() throws Exception {
+		KVSClient kvs = new KVSClient(Master.masterAddr);
+		kvs.delete(tableName);
+	}
+
 
 }
