@@ -81,7 +81,7 @@ public class Crawler {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					if (hostLimitReached(hostKey, urlParts[1], kvs, 5000)) {
+					if (hostLimitReached(hostKey, urlParts[1], kvs, 10000)) {
 						System.out.println("Last access too recent");
 						return new ArrayList<String>();
 					}
