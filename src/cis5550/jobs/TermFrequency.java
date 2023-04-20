@@ -165,6 +165,8 @@ public class TermFrequency {
 				ctx.getKVS().put(WD_METRIC, currRow.key(), "normalized-tf", currRow.get(currCol.get(0)).split("\\+")[1]);
 			}
 			
+			ctx.getKVS().delete("temp");
+			
 			ctx.output("OK");
 
 		} catch (FileNotFoundException e) {

@@ -166,6 +166,8 @@ public class Idf {
 				}
 			}
 			
+			ctx.getKVS().delete("temp-1");
+			
 			ctx.output("OK");
 			
 		} catch (FileNotFoundException e) {

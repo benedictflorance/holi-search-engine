@@ -143,13 +143,11 @@ public class PageRank {
 			    
 			    System.out.println("maxChange" + maxChange);
 			    
-//			    transferTable.delete();
-//			    stateTable.delete();
+			    transferTable.delete();
+			    stateTable.delete();
 			    // Replace old state table with new one
 			    stateTable = newStateTable;
 			    
-			    
-
 			    // Check for convergence
 			    if (Double.parseDouble(maxChange) < convergenceThreshold) {
 			        break;
