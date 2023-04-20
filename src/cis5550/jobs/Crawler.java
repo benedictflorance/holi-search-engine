@@ -273,10 +273,16 @@ public class Crawler {
 				kvs.putRow(Constants.CRAWL, row);
 				return new HashSet<String>();
 			}
+			if (duplicateContent(kvs, urlString, row, contentStr)) {
+				System.out.println("This page is a duplicate in content");
+				kvs.putRow(Constants.CRAWL, row);
+				return new HashSet<String>();
+			}
 			row.put("page", contentStr);
 			kvs.putRow(Constants.CRAWL, row);
 			incrementHost(hostKey, kvs);
 			System.out.println("Downloaded page: " + urlString);
+			
 			// Extract more URLs from this page and put them to the back of the queue.
 			return URLExtractor.extractURLs(contentStr, urlString, blacklist, kvs, false);
 		} catch (Exception e) {
@@ -328,6 +334,20 @@ public class Crawler {
 		}
 		//Other filters?
 		return true;
+	}
+	
+	public static boolean duplicateContent(KVSClient kvs, String url, Row row, String pageContent) {
+		try {
+			Row content = kvs.getRow("content-seen", Hasher.hash(pageContent));
+			if (content == null) {
+	        	kvs.put("content-seen", Hasher.hash(pageContent), "url", url);
+				return false;
+			}
+			row.put("canonicalURL", content.get("url"));
+		} catch (Exception e) {
+			
+		}
+    	return true;
 	}
 	
 }
