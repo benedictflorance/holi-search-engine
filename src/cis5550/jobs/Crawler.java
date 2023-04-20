@@ -23,15 +23,21 @@ public class Crawler {
 			context.output("No seed found");
 			return;
 		}
-		String seed = URLExtractor.normalizeURL("", args[0]);
-		if (seed == null) {
-			context.output("Seed bad");
-			return;
+		List<String> seeds = new ArrayList<String>();
+		for (String seed : args) {
+			String norm = URLExtractor.normalizeURL("", seed);
+			if (norm == null) {
+				context.output("seed bad");
+				continue;
+			}
+			seeds.add(seed);
+			context.output("Seed added: " + seed);
+			System.out.println("Seed added: " + seed);
 		}
 		FlameRDD urlQueue;
 		KVSClient kvsClient = context.getKVS();
 		try {
-			urlQueue = context.parallelize(Arrays.asList(seed));
+			urlQueue = context.parallelize(seeds);
 			kvsClient.persist(Constants.CRAWL);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -39,9 +45,11 @@ public class Crawler {
 			return;
 		}
 		String kvsMasterAddr = context.getKVS().getMaster();
-		// Start crawling
-		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 1000) {
-				urlQueue = urlQueue.flatMap(urlString -> {
+		context.output("Ready to start crawling");
+		System.out.println("Ready to start crawling");
+		Thread.sleep(3000);
+		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 10000) {
+			FlameRDD urlQueueNew = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
 					String rowKey = Hasher.hash(urlString);
@@ -68,7 +76,7 @@ public class Crawler {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					if (hostLimitReached(hostKey, urlParts[1], kvs, 1000)) {
+					if (hostLimitReached(hostKey, urlParts[1], kvs, 5000)) {
 						return new ArrayList<String>();
 					}
 					Row row = new Row(rowKey);
@@ -89,6 +97,8 @@ public class Crawler {
 					System.out.println("Send GET for " + urlString);
 					return sendGet(url, hostKey, rowKey, urlString, kvs, row, Constants.blacklist);
 				});
+				urlQueue.delete();
+				urlQueue = urlQueueNew;
 		}
 		context.output("OK");
 	}
