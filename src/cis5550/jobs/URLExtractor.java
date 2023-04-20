@@ -240,11 +240,14 @@ public class URLExtractor {
 //							 "\\/\\/(?!www\\.).*?[^a-z]+.*?\\.gov",
 							 "\\+",
 							 "\\.onion",
-							 "\\.com\\.cn",
+							 "\\.cn",
 							 "\\/TV",
 							 "\\/tv",
 							 "\\/photo",
-							 "\\/:Template"
+							 "\\/Template:",
+							 "\\/Wikipedia:",
+							 "\\/Portal:",
+							 "\\/Special:"
 							 };
 	}
 	
