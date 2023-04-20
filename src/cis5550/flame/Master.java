@@ -39,7 +39,6 @@ class Master extends cis5550.generic.Master {
     /* Set up a little info page that can be used to see the list of registered workers */
 
     get("/", (request,response) -> {
-    	System.out.println("ROOT");
       response.type("text/html");
       return "<html><head><title>Flame Master</title></head><body><h3>Flame Master</h3>\n" + workerTable() + "</body></html>";
     });

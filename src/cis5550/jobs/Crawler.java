@@ -76,7 +76,7 @@ public class Crawler {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					if (hostLimitReached(hostKey, urlParts[1], kvs, 5000)) {
+					if (hostLimitReached(hostKey, urlParts[1], kvs, 3000)) {
 						return new ArrayList<String>();
 					}
 					Row row = new Row(rowKey);
@@ -86,8 +86,7 @@ public class Crawler {
 						return new ArrayList<String>();
 					}
 					if (!accessTimeLimitPassed(hostKey, kvs)) {
-						Thread.sleep(1000);
-						// return Arrays.asList(new String[] {urlString});
+						return Arrays.asList(new String[] {urlString});
 					}
 					System.out.println("Send HEAD for " + urlString);
 					List<String> headRet = sendHead(url, hostKey, rowKey, urlString, kvs, row);

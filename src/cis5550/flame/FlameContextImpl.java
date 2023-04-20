@@ -87,12 +87,14 @@ public class FlameContextImpl implements FlameContext{
 		
 	     Thread threads[] = new Thread[partitionVec.size()];
 	     String results[] = new String[partitionVec.size()];
+	     System.out.println("Partition of task done: " + partitionVec.size());
 	     for (int i=0; i<partitionVec.size(); i++) {
 	        final String url = "http://"+partitionVec.get(i).assignedFlameWorker+nameOfOp+"?input="+inputTable+"&output="+opTableName+
 	        		"&fromKey="+partitionVec.get(i).fromKey+"&toKey="+partitionVec.get(i).toKeyExclusive+"&masterAddr="+Master.masterAddr
 	        		+"&encodedZeroEle="+encodedZeroEle;
 	        
-	        
+	 
+	        System.out.println(url);
 	        final int j = i;
 	        threads[i] = new Thread("Worker #"+(i+1)) {
 	          public void run() {
