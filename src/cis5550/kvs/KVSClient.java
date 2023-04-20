@@ -299,6 +299,50 @@ public class KVSClient implements KVS {
 	  }
 	  
   }
+  
+  public void putBatchRDD(String tableName, Iterable<String> data) throws IOException {
+	  if (!haveWorkers)
+	      downloadWorkers();
+	  //map from KVS worker addr to row key to Row
+	  Map<String, List<Row>> map = new HashMap<>();
+	  for (String val : data) {
+		  String rKey = Hasher.hash(UUID.randomUUID().toString());
+		  if (rKey.contains(" ")) {
+			  throw new RuntimeException("Row key contains space!");
+		  }
+		  String kvsWorkerAddr = workers.elementAt(workerIndexForKey(rKey)).address;
+		  Row curr = new Row(rKey);
+		  curr.put("value", val);
+		  if (!map.containsKey(kvsWorkerAddr)) {
+			  List<Row> rl = new ArrayList<Row>();
+			  rl.add(curr);
+			  map.put(kvsWorkerAddr, rl);
+		  } else {
+			 map.get(kvsWorkerAddr).add(curr);
+		  }
+	  }
+	  for (String kvsAddr : map.keySet()) {
+		  List<Row> rows = map.get(kvsAddr);
+		  byte[] serialized = new byte[0];
+		  for (Row r : rows) {
+			  byte[] s = r.toByteArray();
+			  byte[] newArray = new byte[serialized.length + s.length + 1];
+			  for (int i = 0; i < serialized.length; i++) {
+				  newArray[i] = serialized[i];
+			  }
+			  for (int i = 0; i < s.length; i++) {
+				  newArray[i + serialized.length] = s[i];
+			  }
+			  newArray[newArray.length - 1] = (byte) 10;
+			  serialized = newArray; 
+		  }
+		  byte[] response = HTTP.doRequest("PUT", "http://"+kvsAddr+"/data/batch/"+tableName, serialized).body();
+		  String result = new String(response);
+	      if (!result.equals("OK")) 
+	      	throw new RuntimeException("PUT returned something other than OK: "+result+ "("+kvsAddr+")");
+	  }
+	  
+  }
 
   public void putRow(String tableName, Row row) throws FileNotFoundException, IOException {
     if (!haveWorkers)
