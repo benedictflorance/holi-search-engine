@@ -30,9 +30,8 @@ public class Crawler {
 				context.output("seed bad");
 				continue;
 			}
-			seeds.add(seed);
-			context.output("Seed added: " + seed);
-			System.out.println("Seed added: " + seed);
+			seeds.add(norm);
+			System.out.println("Seed added: " + norm);
 		}
 		FlameRDD urlQueue;
 		KVSClient kvsClient = context.getKVS();
@@ -46,10 +45,9 @@ public class Crawler {
 			return;
 		}
 		String kvsMasterAddr = context.getKVS().getMaster();
-		context.output("Ready to start crawling");
 		System.out.println("Ready to start crawling");
 		Thread.sleep(3000);
-		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 200000) {
+		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 1000000) {
 			FlameRDD urlQueueNew = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);
@@ -77,7 +75,7 @@ public class Crawler {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					if (hostLimitReached(hostKey, urlParts[1], kvs, 3000)) {
+					if (hostLimitReached(hostKey, urlParts[1], kvs, 5000)) {
 						return new ArrayList<String>();
 					}
 					Row row = new Row(rowKey);
@@ -272,7 +270,7 @@ public class Crawler {
 			incrementHost(hostKey, kvs);
 			System.out.println("Downloaded page: " + urlString);
 			// Extract more URLs from this page and put them to the back of the queue.
-			return URLExtractor.extractURLs(contentStr, urlString, blacklist, kvs, true);
+			return URLExtractor.extractURLs(contentStr, urlString, blacklist, kvs, false);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new HashSet<String>();
