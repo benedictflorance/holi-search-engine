@@ -39,6 +39,7 @@ public class Crawler {
 		try {
 			urlQueue = context.parallelize(seeds);
 			kvsClient.persist(Constants.CRAWL);
+			kvsClient.persist(Constants.HOST);
 		} catch (Exception e) {
 			e.printStackTrace();
 			context.output("KVStore not working.");
@@ -48,7 +49,7 @@ public class Crawler {
 		context.output("Ready to start crawling");
 		System.out.println("Ready to start crawling");
 		Thread.sleep(3000);
-		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 10000) {
+		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 200000) {
 			FlameRDD urlQueueNew = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
 					KVSClient kvs = new KVSClient(kvsMasterAddr);

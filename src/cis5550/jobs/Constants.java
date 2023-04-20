@@ -10,6 +10,7 @@ public class Constants {
 	public static List<String> blacklist = new ArrayList<String>(Arrays.asList(URLExtractor.buildBadURLsList()));
 	public static String CRAWL = "crawl";
 	public static String INDEX = "index";
+	public static String HOST = "host";
 	public static Set<String> ignore = new HashSet<String>(Arrays.asList("the",
 																		 "a", 
 																		 "an", 

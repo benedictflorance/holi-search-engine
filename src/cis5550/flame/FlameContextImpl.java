@@ -152,7 +152,7 @@ public class FlameContextImpl implements FlameContext{
 		
 		FlameRDDImpl flameRDD = new FlameRDDImpl();
 		flameRDD.setTableName(tableName);
-		
+		kvs.persist(tableName);
 		Integer i = 1;
 		for(String l: list) {
 			kvs.put(tableName, Hasher.hash(i.toString()), "value", l);
