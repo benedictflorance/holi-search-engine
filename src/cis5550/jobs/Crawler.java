@@ -23,30 +23,36 @@ public class Crawler {
 			context.output("No seed found");
 			return;
 		}
-		List<String> seeds = new ArrayList<String>();
-		for (String seed : args) {
-			String norm = URLExtractor.normalizeURL("", seed);
-			if (norm == null) {
-				context.output("seed bad");
-				continue;
-			}
-			seeds.add(norm);
-			System.out.println("Seed added: " + norm);
-		}
 		FlameRDD urlQueue;
 		KVSClient kvsClient = context.getKVS();
-		try {
-			urlQueue = context.parallelize(seeds);
-			kvsClient.persist(Constants.CRAWL);
-			kvsClient.persist(Constants.HOST);
-		} catch (Exception e) {
-			e.printStackTrace();
-			context.output("KVStore not working.");
-			return;
+		if (args[0].equals("-t")) {
+			urlQueue = context.fromTable(args[1], row -> row.get("value"));
+			System.out.println("Re-created url queue from an existing table");
+		} else {
+			List<String> seeds = new ArrayList<String>();
+			for (String seed : args) {
+				String norm = URLExtractor.normalizeURL("", seed);
+				if (norm == null) {
+					context.output("seed bad");
+					continue;
+				}
+				seeds.add(norm);
+				System.out.println("Seed added: " + norm);
+			}
+			try {
+				urlQueue = context.parallelize(seeds);
+				kvsClient.persist(Constants.CRAWL);
+				kvsClient.persist(Constants.HOST);
+			} catch (Exception e) {
+				e.printStackTrace();
+				context.output("KVStore not working.");
+				return;
+			}
 		}
 		String kvsMasterAddr = context.getKVS().getMaster();
 		System.out.println("Ready to start crawling");
 		Thread.sleep(3000);
+		FlameRDD urlQueuePrev = urlQueue;
 		while (urlQueue.count() != 0 && kvsClient.count(Constants.CRAWL) < 1000000) {
 			FlameRDD urlQueueNew = urlQueue.flatMap(urlString -> {
 					System.out.println("Crawling " + urlString);
@@ -76,6 +82,7 @@ public class Crawler {
 						e.printStackTrace();
 					}
 					if (hostLimitReached(hostKey, urlParts[1], kvs, 5000)) {
+						System.out.println("Last access too recent");
 						return new ArrayList<String>();
 					}
 					Row row = new Row(rowKey);
@@ -95,7 +102,8 @@ public class Crawler {
 					System.out.println("Send GET for " + urlString);
 					return sendGet(url, hostKey, rowKey, urlString, kvs, row, Constants.blacklist);
 				});
-				urlQueue.delete();
+				urlQueuePrev.delete();
+				urlQueuePrev = urlQueue;
 				urlQueue = urlQueueNew;
 		}
 		context.output("OK");

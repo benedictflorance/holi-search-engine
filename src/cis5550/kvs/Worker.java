@@ -43,47 +43,56 @@ public class Worker extends cis5550.generic.Worker {
 		return null;
 	}
 	
-	public synchronized String putTable(Request req, Response res) throws Exception {
-		if (!tables.containsKey(req.params("table"))) {
-			tables.put(req.params("table"), new MemTable(req.params("table"), dir));
+	public synchronized String putTable(Request req, Response res) {
+		try {
+			if (!tables.containsKey(req.params("table"))) {
+				tables.put(req.params("table"), new MemTable(req.params("table"), dir));
+			}
+			Table t = tables.get(req.params("table"));
+			String rKey = req.params("row").trim();
+			if (rKey == null) {
+				res.status(403, "Forbidden");
+				return "Row key not given.";
+			}
+			if (rKey.length() == 0 || rKey.length() > 1024 || rKey.contains(" ")) {
+				res.status(403, "Forbidden");
+				return "Row key not allowed";
+			}
+			Row row = t.getRow(rKey);
+			if (row == null) {
+				row = new Row(rKey);
+			}
+			String cKey = req.params("col").trim();
+			if (cKey == null) {
+				res.status(403, "Forbidden");
+				return "Column key not given.";
+			}
+			if (cKey.length() == 0 || cKey.length() > 1024 || cKey.contains(" ")) {
+				res.status(403, "Forbidden");
+				return "Column key length not allowed";
+			}
+			row.put(cKey, req.bodyAsBytes());
+			t.putRow(rKey, row);
+			res.status(200, "OK");
+		} catch (Exception e) {
+
 		}
-		Table t = tables.get(req.params("table"));
-		String rKey = req.params("row").trim();
-		if (rKey == null) {
-			res.status(403, "Forbidden");
-			return "Row key not given.";
-		}
-		if (rKey.length() == 0 || rKey.length() > 1024 || rKey.contains(" ")) {
-			res.status(403, "Forbidden");
-			return "Row key not allowed";
-		}
-		Row row = t.getRow(rKey);
-		if (row == null) {
-			row = new Row(rKey);
-		}
-		String cKey = req.params("col").trim();
-		if (cKey == null) {
-			res.status(403, "Forbidden");
-			return "Column key not given.";
-		}
-		if (cKey.length() == 0 || cKey.length() > 1024 || cKey.contains(" ")) {
-			res.status(403, "Forbidden");
-			return "Column key length not allowed";
-		}
-		row.put(cKey, req.bodyAsBytes());
-		t.putRow(rKey, row);
-		res.status(200, "OK");
 		return "OK";
 	}
 	
 	
-	public synchronized String getCol(Request req, Response res) throws Exception {
+	public synchronized String getCol(Request req, Response res) {
 		if (!tables.containsKey(req.params("table"))) {
 			res.status(404, "Not Found");
 			return "Not Found";
 		}
 		Table t = tables.get(req.params("table"));
-		Row row = t.getRow(req.params("row"));
+		Row row = null;
+		try {
+			row = t.getRow(req.params("row"));
+		} catch (Exception e) {
+			
+		}
 		if (row == null) {
 			res.status(404, "Not Found");
 			return "Not Found";
@@ -98,13 +107,18 @@ public class Worker extends cis5550.generic.Worker {
 		return null;
 	}
 	
-	public String getRow(Request req, Response res) throws Exception {
+	public String getRow(Request req, Response res) {
 		if (!tables.containsKey(req.params("table"))) {
 			res.status(404, "Not Found");
 			return "Not Found";
 		}
 		Table t = tables.get(req.params("table"));
-		Row r = t.getRow(req.params("row"));
+		Row r = null;
+		try {
+			r = t.getRow(req.params("row"));
+		} catch (Exception e) {
+			
+		}
 		if (r == null) {
 			res.status(404, "Not Found");
 			return "Not Found";
@@ -116,36 +130,41 @@ public class Worker extends cis5550.generic.Worker {
 		return null;
 	}
 	
-	public String getTable(Request req, Response res) throws Exception {
+	public String getTable(Request req, Response res) {
 		if (!tables.containsKey(req.params("table"))) {
 			res.status(404, "Not Found");
 			System.out.println(req.params("table") + "Not Found");
 			return "Not Found";
 		}
-		Table t = tables.get(req.params("table"));
-		String start = req.queryParams("startRow");
-		String end = req.queryParams("endRowExclusive");
-		byte[] lf = {10};
-		for (String rKey : t.getRowKeys()) {
-			if (start != null) {
-				if (!start.equals("null") && start.length() != 0) {
-					if (rKey.compareTo(start) < 0) {
-						continue;
+		try {
+			Table t = tables.get(req.params("table"));
+			String start = req.queryParams("startRow");
+			String end = req.queryParams("endRowExclusive");
+			byte[] lf = {10};
+			for (String rKey : t.getRowKeys()) {
+				if (start != null) {
+					if (!start.equals("null") && start.length() != 0) {
+						if (rKey.compareTo(start) < 0) {
+							continue;
+						}
 					}
 				}
-			}
-			if (end != null) {
-				if (!end.equals("null") && end.length() != 0) {
-					if (rKey.compareTo(end) >= 0) {
-						continue;
+				if (end != null) {
+					if (!end.equals("null") && end.length() != 0) {
+						if (rKey.compareTo(end) >= 0) {
+							continue;
+						}
 					}
 				}
+				Row r = t.getRow(rKey);
+				res.write(r.toByteArray());
+				res.write(lf);
 			}
-			Row r = t.getRow(rKey);
-			res.write(r.toByteArray());
 			res.write(lf);
+			res.status(200, "OK");
+		} catch (Exception e) {
+
 		}
-		res.write(lf);
 		return null;
 	}
 	
@@ -158,36 +177,45 @@ public class Worker extends cis5550.generic.Worker {
 		put("/persist/:table", (req, res) -> {
 			updateAccessTime();
 			String tKey = req.params("table");
-			if (!tables.containsKey(tKey)) {
-				tables.put(tKey, new PersistentTable(tKey, dir));
-				res.status(200, "OK");
-				return "OK";
+			try {
+				if (!tables.containsKey(tKey)) {
+					tables.put(tKey, new PersistentTable(tKey, dir));
+					res.status(200, "OK");
+					return "OK";
+				}
+				if (!tables.get(tKey).persistent()) {
+					// convert to persistent
+					MemTable mt = (MemTable) tables.get(tKey);
+					Map<String, Row> data = mt.getAllData();
+					Table pt =  new PersistentTable(tKey, dir, data);
+					tables.remove(tKey);
+					tables.put(tKey, pt);
+					res.status(200, "OK");
+					return "OK";
+				}
+				// Already persistent
+				res.status(403, "Forbidden");
+				
+			} catch (Exception e) {
+				
 			}
-			if (!tables.get(tKey).persistent()) {
-				// convert to persistent
-				MemTable mt = (MemTable) tables.get(tKey);
-				Map<String, Row> data = mt.getAllData();
-				Table pt =  new PersistentTable(tKey, dir, data);
-				tables.remove(tKey);
-				tables.put(tKey, pt);
-				res.status(200, "OK");
-				return "OK";
-			}
-			// Already persistent
-			res.status(403, "Forbidden");
 			return "403 Forbidden";
 		});
 		
 		put("/data/:table", (req, res) -> {
 			updateAccessTime();
-			if (!tables.containsKey(req.params("table"))) {
-				tables.put(req.params("table"), new MemTable(req.params("table"), dir));
-			}
-			Table t = tables.get(req.params("table"));
-			InputStream bis = new ByteArrayInputStream(req.bodyAsBytes());
-			while (bis.available() > 0) {
-				Row r = Row.readFrom(bis);
-				t.putRow(r.key, r);
+			try {
+				if (!tables.containsKey(req.params("table"))) {
+					tables.put(req.params("table"), new MemTable(req.params("table"), dir));
+				}
+				Table t = tables.get(req.params("table"));
+				InputStream bis = new ByteArrayInputStream(req.bodyAsBytes());
+				while (bis.available() > 0) {
+					Row r = Row.readFrom(bis);
+					t.putRow(r.key, r);
+				}
+			} catch (Exception e) {
+				
 			}
 			return "OK";
 		});
@@ -236,14 +264,18 @@ public class Worker extends cis5550.generic.Worker {
 				res.status(404, "Not Found");
 				return "Not Found";
 			}
-			Table t = tables.get(req.params("table"));
-			InputStream bis = new ByteArrayInputStream(req.bodyAsBytes());
-			List<Row> batch = new ArrayList<Row>();
-			while (bis.available() > 0) {
-				Row temp = Row.readFrom(bis);
-				batch.add(temp);
+			try {
+				Table t = tables.get(req.params("table"));
+				InputStream bis = new ByteArrayInputStream(req.bodyAsBytes());
+				List<Row> batch = new ArrayList<Row>();
+				while (bis.available() > 0) {
+					Row temp = Row.readFrom(bis);
+					batch.add(temp);
+				}
+				t.putBatch(batch, Server.server);
+			} catch (Exception e) {
+				
 			}
-			t.putBatch(batch, Server.server);
 			res.status(200, "OK");
 			return "OK";
 		});
