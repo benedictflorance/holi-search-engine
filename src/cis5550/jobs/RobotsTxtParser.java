@@ -107,7 +107,7 @@ public class RobotsTxtParser {
 			if (robotBytes != null ) {
 				// robots.txt has been requested
 				String robot = new String(robotBytes);
-				if (robot.equals("FALSE")) {
+				if (robot.equals("FALSE") || robot.equals("IGNORE")) {
 					// if robot.txt == "FALSE", we have already verified that this host does not have a robots.txt, so we can crawl freely.
 					return true;
 				}
