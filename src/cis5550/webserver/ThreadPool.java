@@ -54,6 +54,9 @@ public class ThreadPool {
 	
 	private synchronized void incrementBusy(int id) {
 		numBusy++;
+		if (workers.size() - numBusy < 5) {
+			System.out.println("Thread pool capacity: " + numBusy + "/" + workers.size());
+		}
 	}
 	private synchronized void decrementBusy(int id) {
 		numBusy--;

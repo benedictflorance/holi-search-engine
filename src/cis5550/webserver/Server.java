@@ -458,16 +458,25 @@ public class Server {
 		conn.respond("Content-Length: " + String.valueOf(size) + "\r\n\r\n");
 	}
 
-	private void handleConnection(Connection conn) throws Exception {
+	private void handleConnection(Connection conn) {
 		while (true) {
-			byte[] header_bytes = conn.readUntilDoubleCRLF();
-			if (header_bytes == null) {
+			try {
+				byte[] header_bytes = conn.readUntilDoubleCRLF();
+				if (header_bytes == null) {
+					break;
+				}
+				String header = new String(header_bytes);
+				handleHeader(header, conn);
+			} catch (Exception e) {
+				e.printStackTrace();
 				break;
 			}
-			String header = new String(header_bytes);
-			handleHeader(header, conn);
 		}
-		conn.close();
+		try {
+			conn.close();
+		} catch (Exception e) {
+			
+		}
 
 	}
 	
@@ -553,6 +562,7 @@ public class Server {
 		while (keep_running) {
 			try {
 				Socket connSocket = listenSocket.accept();
+				// connSocket.setSoTimeout(60000);
 				Connection conn = new Connection(connSocket);
 				Task t = new ServerTask(conn);
 				threadPool.dispatch(t);
