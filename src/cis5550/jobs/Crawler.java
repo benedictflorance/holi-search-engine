@@ -76,31 +76,42 @@ public class Crawler {
 					}
 					String hostKey = Hasher.hash(urlParts[1]);
 					// Register host
+					Row host = null;
 					try {
-						kvs.put("hosts", hostKey, "url", urlParts[1]);
+						host = kvs.getRow(Constants.HOST, hostKey);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					if (hostLimitReached(hostKey, urlParts[1], kvs, 10000)) {
+					// new host
+					if (host == null) {
+						host = new Row(hostKey);
+						host.put("url", urlParts[1]);
+						host.put("quota", String.valueOf(10000));
+					}
+					if (hostLimitReached(host)) {
 						System.out.println("Last access too recent");
 						return new ArrayList<String>();
 					}
 					Row row = new Row(rowKey);
 					row.put("url", urlString);
-					if (!RobotsTxtParser.robotPermits(hostKey, urlParts, urlString, kvs, row)) {
+					if (!RobotsTxtParser.robotPermits(hostKey, urlParts, urlString, kvs, host, row)) {
 						System.out.println("Robot says no");
+						kvs.putRow(Constants.HOST, host);
+						kvs.putRow(Constants.CRAWL, row);
 						return new ArrayList<String>();
 					}
-					if (!accessTimeLimitPassed(hostKey, kvs)) {
+					if (!accessTimeLimitPassed(host)) {
 						return Arrays.asList(new String[] {urlString});
 					}
 					System.out.println("Send HEAD for " + urlString);
-					List<String> headRet = sendHead(url, hostKey, rowKey, urlString, kvs, row);
+					List<String> headRet = sendHead(url, hostKey, rowKey, urlString, kvs, host, row);
 					if (headRet != null) {
+						kvs.putRow(Constants.HOST, host);
+						kvs.putRow(Constants.CRAWL, row);
 						return headRet;
 					}
 					System.out.println("Send GET for " + urlString);
-					return sendGet(url, hostKey, rowKey, urlString, kvs, row, Constants.blacklist);
+					return sendGet(url, hostKey, rowKey, urlString, kvs, host, row, Constants.blacklist);
 				});
 				urlQueuePrev.delete();
 				urlQueuePrev = urlQueue;
@@ -131,13 +142,13 @@ public class Crawler {
 		return sb.toString();
 	}
 
-	public static boolean accessTimeLimitPassed(String hostKey, KVSClient kvs) {
+	public static boolean accessTimeLimitPassed(Row host) {
 		try {
-			byte[] lastAccessTimeBytes = kvs.get("hosts", hostKey, "lastAccessTime");
-			if (lastAccessTimeBytes == null) {
+			String lastAccessTimeStr = host.get("lastAccessTime");
+			if (lastAccessTimeStr == null) {
 				return true;
 			}
-			long lastAccessTime = Long.parseLong(new String(lastAccessTimeBytes));
+			long lastAccessTime = Long.parseLong(lastAccessTimeStr);
 			if (System.currentTimeMillis() - lastAccessTime < 1000) {
 				return false;
 			}
@@ -149,7 +160,7 @@ public class Crawler {
 	}
 	
 	// Returns null if we can proceed to GET
-	public static List<String> sendHead(URL url, String hostKey, String rowKey, String urlString, KVSClient kvs, Row row) {
+	public static List<String> sendHead(URL url, String hostKey, String rowKey, String urlString, KVSClient kvs, Row host, Row row) {
 		int responseCode;
 		try {
 			HttpURLConnection connHead = (HttpURLConnection) url.openConnection();
@@ -160,14 +171,14 @@ public class Crawler {
 			connHead.setConnectTimeout(30000);
 			connHead.setReadTimeout(30000);
 			// Update last access time
-			kvs.put("hosts", hostKey, "lastAccessTime", String.valueOf(System.currentTimeMillis()));
+			host.put("lastAccessTime", String.valueOf(System.currentTimeMillis()));
+			kvs.put("hosts", hostKey, "lastAccessTime", host.get("lastAccessTime"));
 			connHead.connect();
 			// Register response code of HEAD request, also register meta-information of the page.
 			responseCode = connHead.getResponseCode();
 			row.put("responseCode",String.valueOf(responseCode));
 			 // If the response is a redirect, get the destination from body and put it to the back of the queue.
 			if (responseCode == 301 || responseCode == 302 || responseCode == 303 || responseCode == 307 || responseCode == 308) {
-				kvs.putRow(Constants.CRAWL, row);
 				String loc = connHead.getHeaderField("Location");
 				String normalized = URLExtractor.normalizeURL(urlString, loc);
 				if (normalized == null) {
@@ -177,24 +188,20 @@ public class Crawler {
 			}
 			// If the response is not 200 or if the content is not text/html, do nothing.
 			if (responseCode != 200) {
-				kvs.putRow(Constants.CRAWL, row);
 				return new ArrayList<String>();
 			}
 			String contentType = connHead.getContentType();
 			if (contentType == null) {
-				kvs.putRow(Constants.CRAWL, row);
 				return new ArrayList<String>();
 			}
 			contentType = contentType.trim().toLowerCase();
 			row.put("contentType", contentType);
 			if (!contentType.startsWith("text/html") || !contentType.contains("utf-8")) {
-				kvs.putRow(Constants.CRAWL, row);
 				return new ArrayList<String>();
 			}
 			int contentLength = connHead.getContentLength();
 			row.put("length", String.valueOf(contentLength));
 			if (contentLength > 1024 * 1024 * 512) { // maximum page size: 512 MB
-				kvs.putRow(Constants.CRAWL, row);
 				return new ArrayList<String>();
 			}
 			// See if we can filter out pages that are not in English
@@ -212,7 +219,7 @@ public class Crawler {
 		}
 	}
 	
-	public static Set<String> sendGet(URL url, String hostKey, String rowKey, String urlString, KVSClient kvs, Row row, List<String> blacklist) {
+	public static Set<String> sendGet(URL url, String hostKey, String rowKey, String urlString, KVSClient kvs, Row host, Row row, List<String> blacklist) {
 		try {
 			int responseCode;
 			HttpURLConnection connGet = (HttpURLConnection) url.openConnection();
@@ -221,7 +228,9 @@ public class Crawler {
 			connGet.setConnectTimeout(30000);
 			connGet.setReadTimeout(30000);
 			// Update access time.
-			kvs.put("hosts", hostKey, "lastAccessTime", String.valueOf(System.currentTimeMillis()));
+			host.put("lastAccessTime", String.valueOf(System.currentTimeMillis()));
+			// Put host row back since we don't need it anymore.
+			kvs.putRow(Constants.HOST, host);
 			connGet.connect();
 			// Check again if the response code is 200 and if the content type is still text/html, even though it's unlikely that they have changed within such a short amount of time.
 			responseCode = connGet.getResponseCode();
@@ -259,6 +268,7 @@ public class Crawler {
 			String contentLanguage = connGet.getHeaderField("Content-Language");
 			if (contentLanguage != null) {
 				if (!contentLanguage.toLowerCase().contains("en")) {
+					kvs.putRow(Constants.CRAWL, row);
 					return new HashSet<String>();
 				}
 			}
@@ -305,14 +315,16 @@ public class Crawler {
 		}
 	}
 	
-	public static boolean hostLimitReached(String hostKey, String hostUrl, KVSClient kvs, int limit) {
+	public static boolean hostLimitReached(Row host) {
 		try {
-			byte[] numPagesBytes = kvs.get("hosts", hostKey, "numPages");
-			if (numPagesBytes == null) {
+			String numPagesStr = host.get("numPages");
+			String quotaStr = host.get("quota");
+			if (numPagesStr == null || quotaStr == null) {
 				return false;
 			}
-			int numPages = Integer.parseInt(new String(numPagesBytes));
-			if (numPages > limit) {
+			int numPages = Integer.parseInt(numPagesStr);
+			int quota = Integer.parseInt(quotaStr);
+			if (numPages > quota) {
 				return true;
 			}
 			return false;

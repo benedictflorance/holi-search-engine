@@ -99,14 +99,13 @@ public class RobotsTxtParser {
 		return parseRules(reader, url);
 	}
 	
-	public static boolean robotPermits(String hostKey, String[] urlParts, String wholeURL, KVSClient kvs, Row row) {
+	public static boolean robotPermits(String hostKey, String[] urlParts, String wholeURL, KVSClient kvs, Row host, Row row) {
 		try {
 			int responseCode;
 			// Check if robot.txt has been requested for this host.
-			byte[] robotBytes = kvs.get("hosts", hostKey, "robots.txt");
-			if (robotBytes != null ) {
+			String robot = host.get("robots.txt");
+			if (robot != null ) {
 				// robots.txt has been requested
-				String robot = new String(robotBytes);
 				if (robot.equals("FALSE") || robot.equals("IGNORE")) {
 					// if robot.txt == "FALSE", we have already verified that this host does not have a robots.txt, so we can crawl freely.
 					return true;
@@ -114,7 +113,6 @@ public class RobotsTxtParser {
 				// This host has a robots.txt
 				if (!parseRobotsTxt(robot, urlParts[3])) {
 					// robots.txt forbids crawling of this page.
-					kvs.putRow(Constants.CRAWL, row);
 					return false;
 				}
 				return true;
@@ -130,28 +128,31 @@ public class RobotsTxtParser {
 			responseCode = connRobo.getResponseCode();
 			if (responseCode != 200) {
 				// The host has no robots.txt. Mark as FALSE so that future queries know.
+				host.put("robots.txt", "FALSE");
 				kvs.put("hosts", hostKey, "robots.txt", "FALSE");
 				return true;
 			}
 			int roboLength = connRobo.getContentLength();
 			if (roboLength > 1024 * 1024 * 512) {
+				host.put("robots.txt", "FALSE");
 				kvs.put("hosts", hostKey, "robots.txt", "FALSE");
 				return true;
 			}
 			// This host has a robots.txt
-			String robot = readBody(connRobo);
-			if (robot == null) {
+			String robots = readBody(connRobo);
+			if (robots == null) {
 				// The host has no robots.txt. Mark as FALSE so that future queries know.
+				host.put("robots.txt", "FALSE");
 				kvs.put("hosts", hostKey, "robots.txt", "FALSE");
 				return true;
 			}
 			// Save robots.txt to KVS
-			kvs.put("hosts", hostKey, "robots.txt", robot.getBytes());
+			host.put("robots.txt", robots);
 			if (!parseRobotsTxt(robot, urlParts[3])) {
-				// robots.txt forbids crawling of this page.
-				kvs.putRow(Constants.CRAWL, row);
+				// robots.txt forbids crawling of this page
 				return false;
 			}
+			kvs.put("hosts", hostKey, "robots.txt", robots.getBytes());
 			return true;
 		}  catch (Exception e) {
 			try {
