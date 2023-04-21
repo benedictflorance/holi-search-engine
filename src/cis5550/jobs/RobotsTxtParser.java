@@ -148,7 +148,7 @@ public class RobotsTxtParser {
 			}
 			// Save robots.txt to KVS
 			host.put("robots.txt", robots);
-			if (!parseRobotsTxt(robot, urlParts[3])) {
+			if (!parseRobotsTxt(robots, urlParts[3])) {
 				// robots.txt forbids crawling of this page
 				return false;
 			}
