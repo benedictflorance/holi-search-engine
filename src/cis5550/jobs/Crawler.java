@@ -89,7 +89,6 @@ public class Crawler {
 						host.put("quota", String.valueOf(10000));
 					}
 					if (hostLimitReached(host)) {
-						System.out.println("Last access too recent");
 						return new ArrayList<String>();
 					}
 					Row row = new Row(rowKey);
@@ -101,6 +100,7 @@ public class Crawler {
 						return new ArrayList<String>();
 					}
 					if (!accessTimeLimitPassed(host)) {
+						System.out.println("Last access too recent");
 						return Arrays.asList(new String[] {urlString});
 					}
 					System.out.println("Send HEAD for " + urlString);

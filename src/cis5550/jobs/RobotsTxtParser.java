@@ -43,7 +43,7 @@ public class RobotsTxtParser {
 						line = reader.readLine();
 						continue;
 					}
-					disallowStr = disallowStr.trim().replace("?", "[\\\\?]").replace("*", ".*?").replace("!", "[\\\\!]").replace("/", "\\/") + ".*?";
+					disallowStr = disallowStr.trim().replace("?", "[\\\\?]").replace("*", ".*?").replace("!", "[\\\\!]").replace("+", "[\\\\+]").replace("/", "\\/") + ".*?";
 					Pattern pattern = Pattern.compile(disallowStr);
 					Matcher matcher = pattern.matcher(url);
 					if (matcher.matches()) {
