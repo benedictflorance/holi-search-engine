@@ -37,9 +37,9 @@ public class TestServer {
 		String rankerAddr = args[1];
 		System.out.println("Ranker listening on address " + args[1] + " ...");
 		
-//		staticFiles.location("frontend_interface/search-app/build");
+		staticFiles.location("static");
 		get("/", (req, res) -> {
-			return Interface.homepage;
+			return Interface.homepage_old;
 		});
 		
 		get("/search", (req, res) -> {
