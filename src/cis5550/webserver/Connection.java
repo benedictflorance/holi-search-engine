@@ -59,6 +59,7 @@ public class Connection {
 			}
 
 		} catch (IOException e) {
+			System.out.println(sock.getInetAddress() + ":" + sock.getPort());
 			e.printStackTrace();
 			return null;
 		}
