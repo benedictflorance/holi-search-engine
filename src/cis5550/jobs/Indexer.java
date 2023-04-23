@@ -61,7 +61,7 @@ public class Indexer {
 		            page = page.replaceAll("[^\\p{ASCII}]", " ");
 		            
 		            // Cut the page size into half
-		            page = page.substring(0, 3*page.length()/4);
+		            page = page.substring(0, page.length()/2);
 	
 		            // Split into words
 		            String[] words = page.split("\\s+");
@@ -149,7 +149,7 @@ public class Indexer {
 			.saveAsTable("index-temp");
 			
 			Iterator<Row> indexRow = ctx.getKVS().scan("index-temp");
-			ctx.getKVS().persist("index");
+			ctx.getKVS().persist("index1");
 			while(indexRow.hasNext()) {
 				Row currRow = indexRow.next();
 				List<String> currCol = new ArrayList<String>(currRow.columns());
