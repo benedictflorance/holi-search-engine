@@ -28,10 +28,11 @@ public class Indexer {
 			
 			FlameRDD flameRdd = ctx.fromTable("crawl", row -> {
 				String page = row.get("page");
-				String result = "";
-				if(page!=null)
-					result = row.get("url") + "," + row.get("page");
-				return result;
+				if(page!=null) {
+					String result = row.get("url") + "," + row.get("page");
+					return result;
+				}
+				return null;
 				});
 	             
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
