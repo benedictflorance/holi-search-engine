@@ -86,9 +86,10 @@ public class Crawler {
 					if (host == null) {
 						host = new Row(hostKey);
 						host.put("url", urlParts[1]);
-						host.put("quota", String.valueOf(10000));
+						host.put("quota", String.valueOf(3000));
 					}
 					if (hostLimitReached(host)) {
+						System.out.println("Quota has reached for this host");
 						return new ArrayList<String>();
 					}
 					Row row = new Row(rowKey);
@@ -196,7 +197,7 @@ public class Crawler {
 			}
 			contentType = contentType.trim().toLowerCase();
 			row.put("contentType", contentType);
-			if (!contentType.startsWith("text/html") || !contentType.contains("utf-8")) {
+			if (!contentType.startsWith("text/html") /*|| !contentType.contains("utf-8") */) {
 				return new ArrayList<String>();
 			}
 			int contentLength = connHead.getContentLength();
@@ -255,7 +256,7 @@ public class Crawler {
 			}
 			row.put("contentType", contentType);
 			contentType = contentType.trim().toLowerCase();
-			if (!contentType.startsWith("text/html") || !contentType.contains("utf-8")) {
+			if (!contentType.startsWith("text/html") /*|| !contentType.contains("utf-8") */) {
 				kvs.putRow(Constants.CRAWL, row);
 				return new HashSet<String>();
 			}
