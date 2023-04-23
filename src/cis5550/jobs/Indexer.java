@@ -149,7 +149,7 @@ public class Indexer {
 			.saveAsTable("index-temp");
 			
 			Iterator<Row> indexRow = ctx.getKVS().scan("index-temp");
-			ctx.getKVS().persist("index1");
+			ctx.getKVS().persist("index");
 			while(indexRow.hasNext()) {
 				Row currRow = indexRow.next();
 				List<String> currCol = new ArrayList<String>(currRow.columns());
