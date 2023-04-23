@@ -26,7 +26,13 @@ public class Indexer {
 	public static void run(FlameContext ctx, String[] args) {
 		try {
 			
-			FlameRDD flameRdd = ctx.fromTable("crawl", row -> row.get("url") + "," + row.get("page"));
+			FlameRDD flameRdd = ctx.fromTable("crawl", row -> {
+				String page = row.get("page");
+				String result = "";
+				if(page!=null)
+					result = row.get("url") + "," + row.get("page");
+				return result;
+				});
 	             
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
 			
@@ -37,7 +43,7 @@ public class Indexer {
 		            System.out.println(url);
 		            String page = urlPage._2();
 	
-		            if(url==null || page==null)
+		            if(url==null || url.equals("null") || page==null || page.equals("null"))
 		            	return null;
 	       
 		         	// Remove content from meta, script and link tags
