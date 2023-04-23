@@ -22,8 +22,8 @@ import cis5550.tools.Hasher;
 
 public class TermFrequency {
 	
-	public static String CRAWL = "crawl-678";
-	public static String INDEX = "index-678";
+	public static String CRAWL = "crawl";
+	public static String INDEX = "index";
 	public static String WD_METRIC = "wd-metric";
 	
 	public static void run(FlameContext ctx, String[] args) {
@@ -63,13 +63,13 @@ public class TermFrequency {
 		            //Remove non ASCII characters
 		            page = page.replaceAll("[^\\p{ASCII}]", " ");
 		            
-//			         // Cut the page size into half
-//		            page = page.substring(0, page.length()/2);
+		            // Cut the page size into half
+		            page = page.substring(0, 3*page.length()/4);
 
 		            // Split into words
 		            String[] words = page.split("\\s+");
 		            
-		            // Create (word, url) pairs with positions
+		            // Create word with with positions
 		            Map<String, Set<Integer>> wordPositions = new ConcurrentHashMap<>();
 		            
 		            // TODO: check - Remove duplicates
@@ -124,7 +124,7 @@ public class TermFrequency {
 	        	}
 	        	l2Norm = Math.sqrt(l2Norm);
 	            
-	         // Compute term frequency (tf) and inverse document frequency (idf)
+	        	// Compute term frequency (tf) and normalizedTf
 				Map<String, Integer> tfMap = new ConcurrentHashMap<>();
 				Map<String, Double> normalizedTfMap = new ConcurrentHashMap<>();
 				for (Map.Entry<String, Set<Integer>> entry : wordPositions.entrySet()) {

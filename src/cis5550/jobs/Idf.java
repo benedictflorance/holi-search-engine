@@ -23,14 +23,15 @@ public class Idf {
 	public static void run(FlameContext ctx, String[] args) {
 		try {
 			
-			Integer i =0;
-			Iterator<Row> crawlRows = ctx.getKVS().scan(CRAWL);
-			while(crawlRows.hasNext()){
-				i++;
-				crawlRows.next();
-				
-			}
-			final Integer N =i;
+			//TODO: precompute number of entries in CRAWL!!!
+//			Integer i =0;
+//			Iterator<Row> crawlRows = ctx.getKVS().scan(CRAWL);
+//			while(crawlRows.hasNext()){
+//				i++;
+//				crawlRows.next();
+//				
+//			}
+			final Integer N =462821;
 			
 			FlameRDD flameRdd = ctx.fromTable(INDEX, row -> row.key() + "," + row.get("url"));
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));

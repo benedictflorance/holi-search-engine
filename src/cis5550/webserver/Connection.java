@@ -74,11 +74,9 @@ public class Connection {
 			buf = Arrays.copyOfRange(buf, length, buf.length);
 			return ret;
 		}
-		int bytes_left = length - buf.length;
-		byte[] new_bytes = sock.getInputStream().readNBytes(bytes_left);
-		addToBuffer(new_bytes, bytes_left);
-		ret = Arrays.copyOfRange(buf, 0, length);
-		buf = Arrays.copyOfRange(buf, length, buf.length);
+		ret = Arrays.copyOf(buf, length);
+		int newBytes = sock.getInputStream().readNBytes(ret, buf.length, length - buf.length);
+		buf = new byte[0];
 		return ret;
 	}
 

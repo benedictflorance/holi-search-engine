@@ -9,12 +9,15 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.Gson;
 
 import cis5550.webserver.Server.staticFiles;
+import cis5550.jobs.Trie;
 import cis5550.webserver.*;
 
 public class TestServer {
@@ -37,9 +40,9 @@ public class TestServer {
 		String rankerAddr = args[1];
 		System.out.println("Ranker listening on address " + args[1] + " ...");
 		
-//		staticFiles.location("frontend_interface/search-app/build");
+		staticFiles.location("static");
 		get("/", (req, res) -> {
-			return Interface.homepage;
+			return Interface.homepage_old;
 		});
 		
 		get("/search", (req, res) -> {
@@ -51,7 +54,7 @@ public class TestServer {
 			}
 			res.header("Content-Type", "text/plain");
 
-			
+			System.out.println(pQueryParam);
 			// query the ranker 
 			String urlStr = "http://" + rankerAddr + "/search?q=" + URLEncoder.encode(req.queryParams("q"), StandardCharsets.UTF_8) + "&page=" + Integer.toString(currentPage);
 			URL url = new URL(urlStr);
@@ -99,6 +102,66 @@ public class TestServer {
 			return null;
 		});
 		
+		get("/cached", (req, res) -> {
+			return "/* Search bar styles */\r\n"
+					+ "     .search-container {\r\n"
+					+ "      margin-top: 80px;\r\n"
+					+ "      display: flex;\r\n"
+					+ "      justify-content: center;\r\n"
+					+ "      align-items: center;\r\n"
+					+ "    }\r\n"
+					+ "    .search-box {\r\n"
+					+ "      width: 50%;\r\n"
+					+ "      padding: 12px 20px;\r\n"
+					+ "      margin: 8px 0;\r\n"
+					+ "      box-sizing: border-box;\r\n"
+					+ "      border: 2px solid #ccc;\r\n"
+					+ "      border-radius: 4px;\r\n"
+					+ "      font-size: 16px;\r\n"
+					+ "      min-height: 50px;\r\n"
+					+ "      outline: none;\r\n"
+					+ "      overflow: auto;\r\n"
+					+ "    }\r\n"
+					+ "    .search-box:focus {\r\n"
+					+ "      border-color: #4CAF50;\r\n"
+					+ "    }\r\n"
+					+ "    .submit-button {\r\n"
+					+ "      width: auto;\r\n"
+					+ "      background-color: #4CAF50;\r\n"
+					+ "      color: white;\r\n"
+					+ "      padding: 12px 20px;\r\n"
+					+ "      margin: 8px 0;\r\n"
+					+ "      border: none;\r\n"
+					+ "      border-radius: 4px;\r\n"
+					+ "      cursor: pointer;\r\n"
+					+ "      font-size: 16px;\r\n"
+					+ "    }\r\n"
+					+ "    .submit-button:hover {\r\n"
+					+ "      background-color: #45a049;\r\n"
+					+ "    }\r\n"
+					+ "\r\n"
+					+ "    /* Search results styles */\r\n"
+					+ "    .search-results {";
+		});
+		
+		get("/suggestion", (req, res) -> {
+			String query = req.queryParams("word");
+			System.out.println("query: " + query);
+	    	Trie trie = new Trie();
+	    	trie.buildTrie("cis5550/jobs/words_alpha.txt");
+	    	List<String> stringList = new ArrayList<>(trie.getSuggestions(query));
+//	    	Collections.shuffle(stringList);
+	    	
+	    	String jsonResponse = "";
+	    	if (stringList.size() > 5) {
+	    		jsonResponse = new Gson().toJson(stringList.subList(0, 5));
+	    	} else {
+	    		jsonResponse = new Gson().toJson(stringList);
+	    	}
+
+			System.out.println(jsonResponse);
+			return jsonResponse;
+		});
 		
 	}
 	
