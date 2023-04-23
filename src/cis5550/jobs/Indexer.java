@@ -26,7 +26,7 @@ public class Indexer {
 	public static void run(FlameContext ctx, String[] args) {
 		try {
 			
-			FlameRDD flameRdd = ctx.fromTable("crawl-1316", row -> row.get("url") + "," + row.get("page"));
+			FlameRDD flameRdd = ctx.fromTable("crawl", row -> row.get("url") + "," + row.get("page"));
 	             
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
 			
@@ -60,8 +60,8 @@ public class Indexer {
 		            //Remove non ASCII characters
 		            page = page.replaceAll("[^\\p{ASCII}]", " ");
 		            
-//		            // Cut the page size into half
-//		            page = page.substring(0, page.length()/2);
+		            // Cut the page size into half
+		            page = page.substring(0, 3*page.length()/4);
 	
 		            // Split into words
 		            String[] words = page.split("\\s+");

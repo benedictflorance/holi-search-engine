@@ -23,7 +23,7 @@ public class PageRank {
 		String masterAddr = ctx.getKVS().getMaster();
 		
 		try {
-			flameRdd = ctx.fromTable("crawl-1316", row -> {
+			flameRdd = ctx.fromTable("crawl", row -> {
 				String url = row.get("url");
 				String page = row.get("page");
 				if (page == null) {
