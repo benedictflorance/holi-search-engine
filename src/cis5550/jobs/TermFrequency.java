@@ -69,7 +69,7 @@ public class TermFrequency {
 		            // Split into words
 		            String[] words = page.split("\\s+");
 		            
-		            // Create (word, url) pairs with positions
+		            // Create word with with positions
 		            Map<String, Set<Integer>> wordPositions = new ConcurrentHashMap<>();
 		            
 		            // TODO: check - Remove duplicates
@@ -124,7 +124,7 @@ public class TermFrequency {
 	        	}
 	        	l2Norm = Math.sqrt(l2Norm);
 	            
-	         // Compute term frequency (tf) and normalizedTf
+	        	// Compute term frequency (tf) and normalizedTf
 				Map<String, Integer> tfMap = new ConcurrentHashMap<>();
 				Map<String, Double> normalizedTfMap = new ConcurrentHashMap<>();
 				for (Map.Entry<String, Set<Integer>> entry : wordPositions.entrySet()) {
