@@ -9,14 +9,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import cis5550.kvs.*;
 public class Sort {
 	public static void main(String[] args) throws Exception {
-		externalSort("/Users/seankung/upenn/cis555/holi-search-engine/worker1/correct.appendOnly");
+		divideAndSort("/Users/seankung/upenn/cis555/holi-search-engine/worker1/correct.appendOnly");
 		for (int i = 0; i < 8; i += 2) {
 			String s0 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + ".table";
 			String s1 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + (i + 1) + ".table";
@@ -38,7 +36,8 @@ public class Sort {
 		produceIndex("/Users/seankung/upenn/cis555/holi-search-engine/worker1/collapsed.table", "/Users/seankung/upenn/cis555/holi-search-engine/worker1/index-1316.table");
 	}
 	
-	public static void externalSort (String inFile) throws IOException, Exception {
+	public static void divideAndSort (String inFile) throws IOException, Exception {
+		System.out.println("Calculating total rows.");
 		byte[] lf = {10};
 		File in = new File (inFile);
 		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(in));
@@ -50,7 +49,8 @@ public class Sort {
 			}
 			num++;
 		}
-		System.out.println("Num rows: " + num);
+		System.out.println("Number of rows: " + num);
+		System.out.println("Divide the file into 8 pieces and sort them.");
 		bis.close();
 		
 		int each = num / 8;
@@ -89,6 +89,7 @@ public class Sort {
 			bos.close();
 		}
 		bis.close();
+		System.out.println("Sorting completed");
 	}
 	
 	public static void merge(String file1, String file2, String out) throws Exception {
@@ -147,6 +148,7 @@ public class Sort {
 	
 	}
 	public static void collapse(String fileIn, String fileOut) throws IOException, Exception {
+		System.out.println("Collapsing the sorted file.");
 		File in = new File (fileIn);
 		File out = new File (fileOut);
 		byte[] lf = {10};
@@ -181,6 +183,7 @@ public class Sort {
 	}
 	
 	public static void produceIndex(String inFile, String outFile) throws IOException, Exception {
+		System.out.println("Producing index.");
 		byte[] lf = {10};
 		File in = new File (inFile);
 		File out = new File (outFile);
