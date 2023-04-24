@@ -343,6 +343,13 @@ public class KVSClient implements KVS {
 	  }
 	  
   }
+  
+  public void collapse(String tableName) throws IOException {
+	  if (!haveWorkers)
+	      downloadWorkers();
+	  for (WorkerEntry w : workers) 
+	      HTTP.doRequest("PUT", "http://"+w.address+"/collapse/"+tableName, null);
+  }
 
   public void putRow(String tableName, Row row) throws FileNotFoundException, IOException {
     if (!haveWorkers)
@@ -408,6 +415,14 @@ public class KVSClient implements KVS {
     for (WorkerEntry w : workers) 
       HTTP.doRequest("PUT", "http://"+w.address+"/persist/"+tableName, null);
   }
+  
+  public void appendOnly(String tableName) throws IOException {
+	    if (!haveWorkers)
+	      downloadWorkers();
+
+	    for (WorkerEntry w : workers) 
+	      HTTP.doRequest("PUT", "http://"+w.address+"/appendOnly/"+tableName, null);
+	  }
 
   public Iterator<Row> scan(String tableName) throws FileNotFoundException, IOException {
     return scan(tableName, null, null);

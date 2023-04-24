@@ -60,7 +60,7 @@ public class PageRank {
 			while(true) {
 				numberOfIterations++;
 				FlamePairRDD transferTable = stateTable
-						.flatMapToPair(pair -> {
+						.flatMapToPair(false, pair -> {
 						    String[] tokens = pair._2().split(",");
 						    String[] urls = Arrays.copyOfRange(tokens, 2, tokens.length);
 						    //check for duplicate links
@@ -101,7 +101,7 @@ public class PageRank {
 
 				FlamePairRDD newStateTable = stateTable
 					    .join(transferTable)
-					    .flatMapToPair(t -> {
+					    .flatMapToPair(false, t -> {
 					    	
 					    try {
 					        String url = t._1();
@@ -158,7 +158,7 @@ public class PageRank {
 			
 			KVSClient kvs1 = new KVSClient(masterAddr);
 			kvs1.persist("pageranks");
-			stateTable.flatMapToPair(t -> {
+			stateTable.flatMapToPair(false, t -> {
 			    String url = t._1();
 			    String[] fields = t._2().split(",");
 			    Double currentRank = Double.parseDouble(fields[0]);

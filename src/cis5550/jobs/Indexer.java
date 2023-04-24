@@ -26,17 +26,16 @@ public class Indexer {
 	public static void run(FlameContext ctx, String[] args) {
 		try {
 			
-			FlameRDD flameRdd = ctx.fromTable("crawl", row -> {
+			FlameRDD flameRdd = ctx.fromTable("crawl-1316", row -> {
 				String page = row.get("page");
-				String result = "";
 				if(page!=null)
-					result = row.get("url") + "," + row.get("page");
-				return result;
+					 return row.get("url") + "," + row.get("page");
+				return null;
 				});
 	             
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
 			
-			flamePairRdd.flatMapToPair(urlPage -> {
+			flamePairRdd.flatMapToPair(true, urlPage -> {
 				try {
 				
 		            String url = urlPage._1();
@@ -67,7 +66,7 @@ public class Indexer {
 		            page = page.replaceAll("[^\\p{ASCII}]", " ");
 		            
 		            // Cut the page size into half
-		            page = page.substring(0, page.length()/2);
+		            // page = page.substring(0, page.length()/2);
 	
 		            // Split into words
 		            String[] words = page.split("\\s+");
@@ -76,7 +75,7 @@ public class Indexer {
 		            Map<String, Set<Integer>> wordPositions = new ConcurrentHashMap<>();
 		            
 		            Trie trie = new Trie();
-					trie.buildTrie("cis5550/jobs/words_alpha.txt");
+					trie.buildTrie("/Users/seankung/upenn/cis555/holi-search-engine/src/cis5550/jobs/words_alpha.txt");
 		            int pos = 1;
 		            for (String word : words) {
 	            		if (word.length() > 512) {

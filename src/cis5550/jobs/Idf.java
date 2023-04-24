@@ -38,7 +38,7 @@ public class Idf {
 			
 			String masterAddr = ctx.getKVS().getMaster();
 			
-			flamePairRdd.flatMapToPair(indexUrl -> {
+			flamePairRdd.flatMapToPair(false, indexUrl -> {
 				
 				String index_word = indexUrl._1();
 	            System.out.println(index_word);
