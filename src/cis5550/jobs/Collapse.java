@@ -16,6 +16,7 @@ import cis5550.kvs.Row;
 
 public class Collapse {
 	public static void main(String[] args) throws Exception {
+		/*
 		File in = new File ("/Users/seankung/upenn/cis555/holi-search-engine/worker1/168230258879611bf3e7b-1bfc-427e-bd50-a75d256eb591.appendOnly");
 		File out = new File ("/Users/seankung/upenn/cis555/holi-search-engine/worker1/finish.table");
 		out.createNewFile();
@@ -70,6 +71,31 @@ public class Collapse {
 		log.close();
 		bos.flush();
 		bos.close();
+		*/
+		byte[] lf = {10};
+		File in = new File ("/Users/seankung/upenn/cis555/holi-search-engine/worker1/finish.table");
+		File out = new File ("/Users/seankung/upenn/cis555/holi-search-engine/worker1/index.table");
+		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(in));
+		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(out));
+		while (bis.available() > 0) {
+			Row r = Row.readFrom(bis);
+			if (r == null) {
+				break;
+			}
+			StringBuilder sb = new StringBuilder();
+			for (String c : r.columns()) {
+				sb.append(r.get(c));
+				sb.append(",");
+			}
+			sb.setLength(sb.length() - 1);
+			Row p = new Row(r.key());
+			p.put("url", sb.toString());
+			bos.write(p.toByteArray());
+			bos.write(lf);
+		}
+		bis.close();
+		bos.close();
+		
 		
 	}
 }
