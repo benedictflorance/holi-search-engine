@@ -30,7 +30,7 @@ public class Indexer {
 			final String masterAddr = ctx.getKVS().getMaster();
 			ctx.getKVS().persist("ntf");
 			
-			FlameRDD flameRdd = ctx.fromTable("crawl-1316", row -> {
+			FlameRDD flameRdd = ctx.fromTable("crawl", row -> {
 				String page = row.get("page");
 				if(page!=null) {
 					String result = row.get("url") + "," + row.get("page");
@@ -71,8 +71,8 @@ public class Indexer {
 		            //Remove non ASCII characters
 		            page = page.replaceAll("[^\\p{ASCII}]", " ");
 		            
-		            // Cut the page size into half
-		            page = page.substring(0, page.length()/2);
+//		            // Cut the page size into half
+//		            page = page.substring(0, page.length()/2);
 	
 		            // Split into words
 		            String[] words = page.split("\\s+");
