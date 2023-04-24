@@ -175,7 +175,7 @@ public class AppendOnly implements Table {
 			bis.skip(log.getFilePointer());
 			while (bis.available() > 0) {
 				Row p = Row.readFrom(bis);
-				if (p == null) {
+				if (p == null) { 
 					break;
 				}
 				if (rows.containsKey(p.key())) {

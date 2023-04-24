@@ -16,7 +16,7 @@ import java.util.Set;
 import cis5550.kvs.*;
 public class Sort {
 	public static void main(String[] args) throws Exception {
-		externalSort("/Users/seankung/upenn/cis555/holi-search-engine/worker1/1316.appendOnly");
+		externalSort("/Users/seankung/upenn/cis555/holi-search-engine/worker1/correct.appendOnly");
 		for (int i = 0; i < 8; i += 2) {
 			String s0 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + ".table";
 			String s1 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + (i + 1) + ".table";
