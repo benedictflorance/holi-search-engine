@@ -18,6 +18,7 @@ import cis5550.flame.FlameContext;
 import cis5550.flame.FlamePair;
 import cis5550.flame.FlamePairRDD;
 import cis5550.flame.FlameRDD;
+import cis5550.kvs.KVSClient;
 import cis5550.kvs.Row;
 
 
@@ -26,10 +27,15 @@ public class Indexer {
 	public static void run(FlameContext ctx, String[] args) {
 		try {
 			
-			FlameRDD flameRdd = ctx.fromTable("crawl-1316", row -> {
+			final String masterAddr = ctx.getKVS().getMaster();
+			ctx.getKVS().persist("ntf");
+			
+			FlameRDD flameRdd = ctx.fromTable("crawl", row -> {
 				String page = row.get("page");
-				if(page!=null)
-					 return row.get("url") + "," + row.get("page");
+				if(page!=null) {
+					String result = row.get("url") + "," + row.get("page");
+					return result;
+				}
 				return null;
 				});
 	             
@@ -65,8 +71,8 @@ public class Indexer {
 		            //Remove non ASCII characters
 		            page = page.replaceAll("[^\\p{ASCII}]", " ");
 		            
-		            // Cut the page size into half
-		            // page = page.substring(0, page.length()/2);
+//		            // Cut the page size into half
+//		            page = page.substring(0, page.length()/2);
 	
 		            // Split into words
 		            String[] words = page.split("\\s+");
@@ -75,7 +81,7 @@ public class Indexer {
 		            Map<String, Set<Integer>> wordPositions = new ConcurrentHashMap<>();
 		            
 		            Trie trie = new Trie();
-					trie.buildTrie("/Users/seankung/upenn/cis555/holi-search-engine/src/cis5550/jobs/words_alpha.txt");
+					trie.buildTrie("cis5550/jobs/words_alpha.txt");
 		            int pos = 1;
 		            for (String word : words) {
 	            		if (word.length() > 512) {
@@ -121,20 +127,26 @@ public class Indexer {
 		            	}
 		            }
 		            
+		            //compute L2 norm over all document level term frequencies
+		            Double l2Norm = 0.0;
+		        	for (Map.Entry<String, Set<Integer>> entry : wordPositions.entrySet()) {
+		        		Integer wordTf = entry.getValue().size();
+		        		l2Norm+=(wordTf*wordTf);
+		        	}
+		        	l2Norm = Math.sqrt(l2Norm);
+		        	
+		        	KVSClient kvs = new KVSClient(masterAddr);
+		        	kvs.put("ntf", url, "ntf",String.valueOf(Math.sqrt(l2Norm)));
+		            
 		            // Create (word, url) pairs
 		            Set<FlamePair> pairs = new HashSet<>();
 		            for (Map.Entry<String, Set<Integer>> entry : wordPositions.entrySet()) {
 		                String word = entry.getKey();
 		                Set<Integer> positions = entry.getValue();
-		                pairs.add(new FlamePair(word, url));
+		                pairs.add(new FlamePair(word, url + ":" + positions.size()));
 		            }
-		            return new Iterable<FlamePair>() {
-		                @Override
-		                public Iterator<FlamePair> iterator()
-		                {
-		                    return pairs.iterator();
-		                }
-		            };
+		            return pairs;
+		            
 				}
 				catch(Exception e) {
 					e.printStackTrace();
