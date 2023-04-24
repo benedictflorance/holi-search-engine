@@ -16,7 +16,7 @@ import cis5550.kvs.Row;
 
 public class Collapse {
 	public static void main(String[] args) throws Exception {
-		File in = new File ("/Users/seankung/upenn/cis555/holi-search-engine/worker1/append.table");
+		File in = new File ("/Users/seankung/upenn/cis555/holi-search-engine/worker1/168230258879611bf3e7b-1bfc-427e-bd50-a75d256eb591.appendOnly");
 		File out = new File ("/Users/seankung/upenn/cis555/holi-search-engine/worker1/finish.table");
 		out.createNewFile();
 		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(out));
@@ -25,9 +25,10 @@ public class Collapse {
 		System.out.println(log.length());
 		Set<String> done = new HashSet<String>();
 		while (log.getFilePointer() < log.length()) {
-			System.out.println(log.getFilePointer());
+			float progress =  ((float) log.getFilePointer() / (float) log.length()) * 100.f;
+			System.out.println("Progress: " + log.getFilePointer() + "/" + log.length() + " = " + progress + "%");
 			Map<String, Row> rows = new HashMap<String, Row>();
-			for (int i = 0; i < 100000 && log.getFilePointer() < log.length(); i++) {
+			while (rows.size() < 2000 && log.getFilePointer() < log.length()) {
 				Row r = Row.readFrom(log);
 				if (r == null) {
 					break;
@@ -45,10 +46,10 @@ public class Collapse {
 					done.add(r.key());
 				}
 			}
-			RandomAccessFile temp = new RandomAccessFile (in, "rw");
-			temp.seek(log.getFilePointer());
-			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(temp.getFD()));
-			while (temp.getFilePointer() != temp.length()) {
+			System.out.println("Collected 2000 rows in memory");
+			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(in));
+			bis.skip(log.getFilePointer());
+			while (bis.available() > 0) {
 				Row p = Row.readFrom(bis);
 				if (p == null) {
 					break;
@@ -61,7 +62,6 @@ public class Collapse {
 				}
 			}
 			bis.close();
-			temp.close();
 			for (Entry<String, Row> e : rows.entrySet()) {
 				bos.write(e.getValue().toByteArray());
 				bos.write(lf);
