@@ -311,11 +311,11 @@ public class Worker extends cis5550.generic.Worker {
 		put("/collapse/:table", (req, res) -> {
 			updateAccessTime();
 			if (!tables.containsKey(req.params("table"))) {
-				res.status(404, "Nor Found");
+				res.status(404, "Not Found");
 				return "Not Found";
 			}
 			AppendOnly ap = (AppendOnly)tables.get(req.params("table"));
-			File f = ap.collapse();
+			File f = ap.reduce();
 			tables.put(ap.getKey(), new PersistentTable(ap.getKey(), dir, f));
 			return "OK";
 		});

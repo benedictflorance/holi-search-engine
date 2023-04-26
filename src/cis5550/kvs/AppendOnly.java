@@ -15,12 +15,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
+import cis5550.jobs.Sort;
 import cis5550.webserver.Server;
-import cis5550.webserver.ThreadPool.Task;
 
 public class AppendOnly implements Table {
 	RandomAccessFile log;
@@ -140,60 +137,24 @@ public class AppendOnly implements Table {
 		}
 	}
 
-	public synchronized File collapse() throws Exception {
-		File out = new File(dir + "/" + id + ".table");
-		out.createNewFile();
-		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(out));
-		byte[] lf = {10};
-		RandomAccessFile log = new RandomAccessFile (tableFile, "r");
-		System.out.println("Collapsing.");
-		Set<String> done = new HashSet<String>();
-		while (log.getFilePointer() < log.length()) {
-			float progress =  ((float) log.getFilePointer() / (float) log.length()) * 100.f ;
-			System.out.println("Progress: " + progress + "%");
-			Map<String, Row> rows = new HashMap<String, Row>();
-			while (rows.size() < 2000 && log.getFilePointer() < log.length()) {
-				Row r = Row.readFrom(log);
-				if (r == null) {
-					break;
-				}
-				if (done.contains(r.key())) {
-					continue;
-				}
-				if (rows.containsKey(r.key())) {
-					Row existing = rows.get(r.key());
-					for (String c : r.columns()) {
-						existing.put(c, r.get(c));
-					}
-				} else {
-					rows.put(r.key(), r);
-					done.add(r.key());
-				}
-			}
-			System.out.println("Collected 2000 rows in memory");
-			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(tableFile));
-			bis.skip(log.getFilePointer());
-			while (bis.available() > 0) {
-				Row p = Row.readFrom(bis);
-				if (p == null) { 
-					break;
-				}
-				if (rows.containsKey(p.key())) {
-					Row existing = rows.get(p.key());
-					for (String c : p.columns()) {
-						existing.put(c, p.get(c));
-					}
-				}
-			}
-			bis.close();
-			for (Entry<String, Row> e : rows.entrySet()) {
-				bos.write(e.getValue().toByteArray());
-				bos.write(lf);
-			}
+	public synchronized File reduce() throws Exception {
+		List<File> sorts = Sort.divideAndSort(tableFile);
+		List<File> merges0 = new ArrayList<File>();
+		for (int i = 0; i < 8; i += 2) {
+			File merge = new File(dir + "/sort-" + i + "-" + (i + 1) + ".table");
+			Sort.merge(sorts.get(i), sorts.get(i + 1), merge); 
+			merges0.add(merge);
 		}
-		log.close();
-		bos.flush();
-		bos.close();
-		return out;
+		List<File> merges1 = new ArrayList<File>();
+		for (int i = 0; i < 8; i += 4) {
+			File merge = new File(dir + "/sort-" + i + "-" + (i + 1) + "-" + (i + 2) + "-" + (i + 3) + ".table");
+			Sort.merge(merges0.get(i / 2), merges0.get(i / 2 + 1), merge);
+			merges1.add(merge);
+		}
+		File merge = new File(dir + "/sort-0-1-2-3-4-5-6-7.table");
+		Sort.merge(merges1.get(0), merges1.get(1), merge);
+		File collapse = new File(dir + "/" + id + ".table");
+		Sort.collapse(merge, collapse);
+		return collapse;
 	}
 }
