@@ -61,8 +61,8 @@ public class PageRank {
 			Integer numberOfIterations = 0;
 			while(true) {
 				numberOfIterations++;
-				FlamePairRDD transferTable = stateTable
-						.flatMapToPair(false, pair -> {
+				FlamePairRDD transferTableOld = stateTable
+						.flatMapToPair(true, pair -> {
 							System.out.println(pair._1());
 						    String[] tokens = pair._2().split(",");
 						    
@@ -93,19 +93,13 @@ public class PageRank {
 						    if(!selfLink)
 						    	results.add(new FlamePair(pair._1(),"0.0"));
 						    
-						    return new Iterable<FlamePair>() {
-				                @Override
-				                public Iterator<FlamePair> iterator()
-				                {
-				                    return results.iterator();
-				                }
-				            };
-						})
-						.foldByKey("0.0",(a,b) -> ""+(Double.parseDouble(a)+Double.parseDouble(b)));
+						    return results;
+						});
+				FlamePairRDD transferTable = transferTableOld.foldByKey("0.0",(a,b) -> ""+(Double.parseDouble(a)+Double.parseDouble(b)));
 
-				FlamePairRDD newStateTable = stateTable
-					    .join(transferTable)
-					    .flatMapToPair(false, t -> {
+				FlamePairRDD newStateTableJoin = stateTable.join(transferTable);
+				
+				FlamePairRDD newStateTable = newStateTableJoin.flatMapToPair(false, t -> {
 					    	
 					    try {
 					        String url = t._1();
@@ -149,6 +143,8 @@ public class PageRank {
 			    
 			    transferTable.delete();
 			    stateTable.delete();
+			    transferTableOld.delete();
+			    newStateTableJoin.delete();
 			    // Replace old state table with new one
 			    stateTable = newStateTable;
 			    
