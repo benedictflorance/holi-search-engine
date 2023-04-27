@@ -8,3 +8,6 @@ worker1/
 .settings/org.eclipse.ltk.core.refactoring.prefs
 src/worker2/id
 *.icloud
+*.appendOnly
+worker2/id
+worker10/id

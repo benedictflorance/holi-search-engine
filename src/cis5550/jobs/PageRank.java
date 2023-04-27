@@ -1,5 +1,7 @@
 package cis5550.jobs;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,7 +25,7 @@ public class PageRank {
 		String masterAddr = ctx.getKVS().getMaster();
 		
 		try {
-			flameRdd = ctx.fromTable("crawl", row -> {
+			flameRdd = ctx.fromTable("crawl-1316", row -> {
 				String url = row.get("url");
 				String page = row.get("page");
 				if (page == null) {
@@ -31,10 +33,10 @@ public class PageRank {
 				}
 				Set<String> urls = URLExtractor.extractURLs(page, url, Constants.blacklist, new KVSClient(masterAddr), false);
 				StringBuilder sb = new StringBuilder();
-				sb.append(url);
+				sb.append(URLEncoder.encode(url,StandardCharsets.UTF_8));
 				for (String u : urls) {
 					sb.append(",");
-					sb.append(u);
+					sb.append(URLEncoder.encode(u,StandardCharsets.UTF_8));
 				}
 				return sb.toString();
 			});
@@ -61,7 +63,9 @@ public class PageRank {
 				numberOfIterations++;
 				FlamePairRDD transferTable = stateTable
 						.flatMapToPair(false, pair -> {
+							System.out.println(pair._1());
 						    String[] tokens = pair._2().split(",");
+						    
 						    String[] urls = Arrays.copyOfRange(tokens, 2, tokens.length);
 						    //check for duplicate links
 						    Set<String> set = new LinkedHashSet<>(Arrays.asList(urls));
@@ -73,10 +77,10 @@ public class PageRank {
 						    	return results;
 						    }
 						    Double rc = Double.parseDouble(tokens[0]);
-						    System.out.println("rc: " + rc);
+//						    System.out.println("rc: " + rc);
 //						    Double v = decayFactor * rc / n;
 						    Double v = rc / n;
-						    System.out.println("v: " + v);
+//						    System.out.println("v: " + v);
 						    
 						    Boolean selfLink = false;
 							for (int i = 0; i < urls.length; i++) {
