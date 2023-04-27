@@ -1,5 +1,7 @@
 package cis5550.jobs;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,10 +33,10 @@ public class PageRank {
 				}
 				Set<String> urls = URLExtractor.extractURLs(page, url, Constants.blacklist, new KVSClient(masterAddr), false);
 				StringBuilder sb = new StringBuilder();
-				sb.append(url);
+				sb.append(URLEncoder.encode(url,StandardCharsets.UTF_8));
 				for (String u : urls) {
 					sb.append(",");
-					sb.append(u);
+					sb.append(URLEncoder.encode(u,StandardCharsets.UTF_8));
 				}
 				return sb.toString();
 			});
@@ -59,7 +61,7 @@ public class PageRank {
 			Integer numberOfIterations = 0;
 			while(true) {
 				numberOfIterations++;
-				FlamePairRDD transferTable = stateTable
+				FlamePairRDD transferTableOld = stateTable
 						.flatMapToPair(pair -> {
 						    String[] tokens = pair._2().split(",");
 						    String[] urls = Arrays.copyOfRange(tokens, 2, tokens.length);
@@ -73,10 +75,10 @@ public class PageRank {
 						    	return results;
 						    }
 						    Double rc = Double.parseDouble(tokens[0]);
-						    System.out.println("rc: " + rc);
+//						    System.out.println("rc: " + rc);
 //						    Double v = decayFactor * rc / n;
 						    Double v = rc / n;
-						    System.out.println("v: " + v);
+//						    System.out.println("v: " + v);
 						    
 						    Boolean selfLink = false;
 							for (int i = 0; i < urls.length; i++) {
@@ -96,12 +98,14 @@ public class PageRank {
 				                    return results.iterator();
 				                }
 				            };
-						})
-						.foldByKey("0.0",(a,b) -> ""+(Double.parseDouble(a)+Double.parseDouble(b)));
+						});
+						
+				FlamePairRDD transferTable	= transferTableOld.foldByKey("0.0",(a,b) -> ""+(Double.parseDouble(a)+Double.parseDouble(b)));
 
-				FlamePairRDD newStateTable = stateTable
-					    .join(transferTable)
-					    .flatMapToPair(t -> {
+				FlamePairRDD newStateTableJoin = stateTable
+					    .join(transferTable);
+					    
+				FlamePairRDD newStateTable= newStateTableJoin.flatMapToPair(t -> {
 					    	
 					    try {
 					        String url = t._1();
@@ -138,13 +142,15 @@ public class PageRank {
 				                    return Collections.singletonList(String.valueOf(Math.abs(currentRank - previousRank))).iterator();
 				                }
 				            };
-			            })
-			            .fold("0.0", (a, b) -> ""+Math.max(Double.parseDouble(a), Double.parseDouble(b)));
+			            }).fold("0.0", (a, b) -> ""+Math.max(Double.parseDouble(a), Double.parseDouble(b)));
 			    
 			    System.out.println("maxChange" + maxChange);
 			    
 			    transferTable.delete();
 			    stateTable.delete();
+			    transferTableOld.delete();
+			    newStateTableJoin.delete();
+			    
 			    // Replace old state table with new one
 			    stateTable = newStateTable;
 			    
