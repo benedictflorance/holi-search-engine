@@ -13,26 +13,28 @@ import java.util.List;
 
 import cis5550.kvs.*;
 public class Sort {
-	static int rounds = 32;
+	String PATH = "";
 	public static void main(String[] args) throws Exception {
-	System.out.println("DAS started");
-	divideAndSort("/home/ubuntu/holi-search-engine/src/worker1/16824601522180c99c94f-574b-4fe8-bd11-60fd261f32f5.appendOnly");
-	System.out.println("DAS ended");
-	String s0, s1, d = "";
-	for(int j = rounds; j>=2; j/=2)
-	{	
-		System.out.println(rounds + " pieces merge");
-        	for (int i = 0; i < j; i += 2) {
-                	s0 = "/home/ubuntu/holi-search-engine/src/worker1/sort" + j + "-" + i + ".table";
-                	s1 = "/home/ubuntu/holi-search-engine/src/worker1/sort" + j + "-" + (i + 1) + ".table";
-                	d = "/home/ubuntu/holi-search-engine/src/worker1/sort" + j/2 +"-" + (i/2) + ".table";
-                	merge(s0, s1, d);
-        	}
-	}        
-	System.out.println("Merge done");
-	collapse(d, "/home/ubuntu/holi-search-engine/src/worker1/collapsed.table");
-	System.out.println("Collapse done");
-	produceIndex("/home/ubuntu/holi-search-engine/src/worker1/collapsed.table", "/home/ubuntu/holi-search-engine/src/worker1/index.table");	
+		divideAndSort("/Users/seankung/upenn/cis555/holi-search-engine/worker1/pairs.appendOnly");
+		for (int i = 0; i < 8; i += 2) {
+			String s0 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + ".table";
+			String s1 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + (i + 1) + ".table";
+			String d = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + "-" + (i + 1) + ".table";
+			merge(s0, s1, d);
+		}
+		for (int i = 0; i < 8; i += 4) {
+			String s0 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + "-" + (i + 1) + ".table";
+			String s1 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + (i + 2) + "-" + (i + 3) + ".table";
+			String d = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + "-" + (i + 1) + "-" + (i + 2) + "-" + (i + 3) + ".table";
+			merge(s0, s1, d);
+		}
+		String s0 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort0-1-2-3.table";
+		String s1 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort4-5-6-7.table";
+		String d = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort0-1-2-3-4-5-6-7.table";
+		merge(s0, s1, d);
+		
+		collapse("/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort0-1-2-3-4-5-6-7.table", "/Users/seankung/upenn/cis555/holi-search-engine/worker1/collapsed.table");
+		produceIndex("/Users/seankung/upenn/cis555/holi-search-engine/worker1/collapsed.table", "/Users/seankung/upenn/cis555/holi-search-engine/worker1/index.table");
 	}
 	
 	public static void divideAndSort (String inFile) throws IOException, Exception {
@@ -49,17 +51,17 @@ public class Sort {
 			num++;
 		}
 		System.out.println("Number of rows: " + num);
-		System.out.println("Divide the file into " + rounds +  " pieces and sort them.");
+		System.out.println("Divide the file into 8 pieces and sort them.");
 		bis.close();
 		
-		int each = num / rounds;
-		int last = num / rounds + num % rounds;
+		int each = num / 8;
+		int last = num / 8 + num % 8;
 		bis = new BufferedInputStream(new FileInputStream(in));
 		
-		for (int i = 0; i < rounds; i++) {
+		for (int i = 0; i < 8; i++) {
 			List<Row> ls = new ArrayList<Row>();
 			int quota;
-			if (i < rounds - 1) {
+			if (i < 7) {
 				quota = each;
 			} else {
 				quota = last;
@@ -77,7 +79,7 @@ public class Sort {
 		        	return r1.key().compareTo(r2.key());
 		        }
 			});
-			File out = new File ("/home/ubuntu/holi-search-engine/src/worker1/sort" + rounds + "-" + i + ".table");
+			File out = new File ("/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + ".table");
 			out.createNewFile();
 			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(out));
 			for (Row sort : ls) {
