@@ -13,28 +13,28 @@ import java.util.List;
 
 import cis5550.kvs.*;
 public class Sort {
-	String PATH = "";
+	static public String PATH = "/Users/namitashukla/Desktop/holi-search-engine/worker1/";
 	public static void main(String[] args) throws Exception {
-		divideAndSort("/Users/seankung/upenn/cis555/holi-search-engine/worker1/pairs.appendOnly");
+		divideAndSort(PATH+"pairs.appendOnly");
 		for (int i = 0; i < 8; i += 2) {
-			String s0 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + ".table";
-			String s1 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + (i + 1) + ".table";
-			String d = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + "-" + (i + 1) + ".table";
+			String s0 = PATH+"sort" + i + ".table";
+			String s1 = PATH+"sort" + (i + 1) + ".table";
+			String d = PATH+"sort" + i + "-" + (i + 1) + ".table";
 			merge(s0, s1, d);
 		}
 		for (int i = 0; i < 8; i += 4) {
-			String s0 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + "-" + (i + 1) + ".table";
-			String s1 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + (i + 2) + "-" + (i + 3) + ".table";
-			String d = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + "-" + (i + 1) + "-" + (i + 2) + "-" + (i + 3) + ".table";
+			String s0 = PATH+"sort" + i + "-" + (i + 1) + ".table";
+			String s1 = PATH+"sort" + (i + 2) + "-" + (i + 3) + ".table";
+			String d = PATH+"sort" + i + "-" + (i + 1) + "-" + (i + 2) + "-" + (i + 3) + ".table";
 			merge(s0, s1, d);
 		}
-		String s0 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort0-1-2-3.table";
-		String s1 = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort4-5-6-7.table";
-		String d = "/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort0-1-2-3-4-5-6-7.table";
+		String s0 = PATH+"sort0-1-2-3.table";
+		String s1 = PATH+"sort4-5-6-7.table";
+		String d = PATH+"sort0-1-2-3-4-5-6-7.table";
 		merge(s0, s1, d);
 		
-		collapse("/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort0-1-2-3-4-5-6-7.table", "/Users/seankung/upenn/cis555/holi-search-engine/worker1/collapsed.table");
-		produceIndex("/Users/seankung/upenn/cis555/holi-search-engine/worker1/collapsed.table", "/Users/seankung/upenn/cis555/holi-search-engine/worker1/index.table");
+		collapse(PATH+"sort0-1-2-3-4-5-6-7.table", PATH+"collapsed.table");
+		produceIndex(PATH+"collapsed.table", PATH+"index.table");
 	}
 	
 	public static void divideAndSort (String inFile) throws IOException, Exception {
@@ -79,7 +79,7 @@ public class Sort {
 		        	return r1.key().compareTo(r2.key());
 		        }
 			});
-			File out = new File ("/Users/seankung/upenn/cis555/holi-search-engine/worker1/sort" + i + ".table");
+			File out = new File (PATH+"sort" + i + ".table");
 			out.createNewFile();
 			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(out));
 			for (Row sort : ls) {
