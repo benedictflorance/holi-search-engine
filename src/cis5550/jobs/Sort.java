@@ -199,7 +199,7 @@ public class Sort {
 		bos.close();
 	}
 	
-	public static List<File> divideAndSort (File in) throws IOException, Exception {
+	public static List<File> divideAndSort (File in, int numDivision) throws IOException, Exception {
 		System.out.println("Calculating total rows.");
 		byte[] lf = {10};
 		List<File> ret = new ArrayList<File>();
@@ -213,14 +213,14 @@ public class Sort {
 			num++;
 		}
 		System.out.println("Number of rows: " + num);
-		System.out.println("Divide the file into 8 pieces and sort them.");
+		System.out.println("Divide the file into "+ numDivision +" pieces and sort them.");
 		bis.close();
 		
-		int each = num / 8;
-		int last = num / 8 + num % 8;
+		int each = num / numDivision;
+		int last = num / numDivision + num % numDivision;
 		bis = new BufferedInputStream(new FileInputStream(in));
 		
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < numDivision; i++) {
 			List<Row> ls = new ArrayList<Row>();
 			int quota;
 			if (i < 7) {

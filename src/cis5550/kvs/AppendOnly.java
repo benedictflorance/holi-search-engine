@@ -20,24 +20,24 @@ import cis5550.jobs.Sort;
 import cis5550.webserver.Server;
 
 public class AppendOnly implements Table {
-	RandomAccessFile log;
 	BufferedOutputStream bos;
 	File tableFile;
 	String id;
 	String dir;
+	long numRows;
+	
 	
 	public AppendOnly(String tKey, String dir) throws IOException {
 		this.tableFile = new File(dir + "/" + tKey + ".appendOnly");
 		this.tableFile.createNewFile();
-		this.log = new RandomAccessFile(tableFile, "rws");
 		this.bos = new BufferedOutputStream(new FileOutputStream(tableFile));
 		this.id = tKey;
 		this.dir = dir;
+		numRows = 0;
 	}
 
 	public AppendOnly(String tKey, String dir, File logFile) throws Exception {
 		this.tableFile = logFile;
-		this.log = new RandomAccessFile(tableFile, "rws");
 		this.bos = new BufferedOutputStream(new FileOutputStream(tableFile));
 		this.id = tKey;
 		this.dir = dir;
@@ -61,6 +61,7 @@ public class AppendOnly implements Table {
 			byte[] lf = {10};
 			bos.write(row.toByteArray());
 			bos.write(lf);
+			numRows++;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -112,8 +113,6 @@ public class AppendOnly implements Table {
 	}
 
 	public synchronized void delete() throws IOException {
-		log.close();
-		log = null;
 		try {
 			Files.delete(tableFile.toPath());
 		} catch (Exception e) {
@@ -138,23 +137,20 @@ public class AppendOnly implements Table {
 	}
 
 	public synchronized File reduce() throws Exception {
-		List<File> sorts = Sort.divideAndSort(tableFile);
-		List<File> merges0 = new ArrayList<File>();
-		for (int i = 0; i < 8; i += 2) {
-			File merge = new File(dir + "/sort-" + i + "-" + (i + 1) + ".table");
-			Sort.merge(sorts.get(i), sorts.get(i + 1), merge); 
-			merges0.add(merge);
+		int numDivision = 8;
+		List<File> sorts = Sort.divideAndSort(tableFile, numDivision);
+		while (numDivision != 1) {
+			List<File> merges = new ArrayList<File>();
+			for (int i = 0; i < numDivision; i += 2) {
+				File merge = new File(dir + "/sort-" + numDivision + "-" + i + "-" + (i + 1) + ".table");
+				Sort.merge(sorts.get(i), sorts.get(i + 1), merge);
+				merges.add(merge);
+			}
+			sorts = merges;
+			numDivision /= 2;
 		}
-		List<File> merges1 = new ArrayList<File>();
-		for (int i = 0; i < 8; i += 4) {
-			File merge = new File(dir + "/sort-" + i + "-" + (i + 1) + "-" + (i + 2) + "-" + (i + 3) + ".table");
-			Sort.merge(merges0.get(i / 2), merges0.get(i / 2 + 1), merge);
-			merges1.add(merge);
-		}
-		File merge = new File(dir + "/sort-0-1-2-3-4-5-6-7.table");
-		Sort.merge(merges1.get(0), merges1.get(1), merge);
 		File collapse = new File(dir + "/" + id + ".table");
-		Sort.collapse(merge, collapse);
+		Sort.collapse(sorts.get(0), collapse);
 		return collapse;
 	}
 }
