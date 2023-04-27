@@ -350,6 +350,7 @@ public class Sort {
 		bis.close();
 		bos.flush();
 		bos.close();
+		System.out.println("Collapsed");
 	}
 	
 }
