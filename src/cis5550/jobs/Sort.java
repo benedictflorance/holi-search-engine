@@ -13,7 +13,7 @@ import java.util.List;
 
 import cis5550.kvs.*;
 public class Sort {
-	static public String PATH = "/Users/namitashukla/Desktop/holi-search-engine/worker1/";
+	static public String PATH = "/Users/seankung/Desktop/";
 	public static void main(String[] args) throws Exception {
 		divideAndSort(PATH+"pairs.appendOnly");
 		for (int i = 0; i < 8; i += 2) {
@@ -35,6 +35,7 @@ public class Sort {
 		
 		collapse(PATH+"sort0-1-2-3-4-5-6-7.table", PATH+"collapsed.table");
 		produceIndex(PATH+"collapsed.table", PATH+"index.table");
+		
 	}
 	
 	public static void divideAndSort (String inFile) throws IOException, Exception {
@@ -66,7 +67,7 @@ public class Sort {
 			} else {
 				quota = last;
 			}
-			while (bis.available() > 0 && ls.size() <= quota) {
+			while (bis.available() > 0 && ls.size() < quota) {
 				Row r = Row.readFrom(bis);
 				if (r == null) {
 					break;
@@ -104,10 +105,7 @@ public class Sort {
 		BufferedOutputStream m = new BufferedOutputStream(new FileOutputStream(merge));
 		Row r0 = Row.readFrom(i0);
 		Row r1 = Row.readFrom(i1);
-		while (i0.available() > 0 && i1.available() > 0) {
-			if (r0 == null || r1 == null) {
-				break;
-			}
+		while (r0 != null && r1 != null) {
 			if (r0.key().compareTo(r1.key()) < 0) {
 				m.write(r0.toByteArray());
 				m.write(lf);
@@ -132,14 +130,6 @@ public class Sort {
 			while (i0.available() > 0) {
 				r0 = Row.readFrom(i0);
 				m.write(r0.toByteArray());
-				m.write(lf);
-			}
-		} else if (r0 != null && r1 != null) {
-			if (r0.key().compareTo(r1.key()) < 0) {
-				m.write(r0.toByteArray());
-				m.write(lf);
-			} else {
-				m.write(r1.toByteArray());
 				m.write(lf);
 			}
 		}
@@ -238,7 +228,7 @@ public class Sort {
 			} else {
 				quota = last;
 			}
-			while (bis.available() > 0 && ls.size() <= quota) {
+			while (bis.available() > 0 && ls.size() < quota) {
 				Row r = Row.readFrom(bis);
 				if (r == null) {
 					break;
@@ -275,10 +265,7 @@ public class Sort {
 		BufferedOutputStream m = new BufferedOutputStream(new FileOutputStream(merge));
 		Row r0 = Row.readFrom(i0);
 		Row r1 = Row.readFrom(i1);
-		while (i0.available() > 0 && i1.available() > 0) {
-			if (r0 == null || r1 == null) {
-				break;
-			}
+		while (r0 != null && r1 != null) {
 			if (r0.key().compareTo(r1.key()) < 0) {
 				m.write(r0.toByteArray());
 				m.write(lf);
@@ -303,14 +290,6 @@ public class Sort {
 			while (i0.available() > 0) {
 				r0 = Row.readFrom(i0);
 				m.write(r0.toByteArray());
-				m.write(lf);
-			}
-		} else if (r0 != null && r1 != null) {
-			if (r0.key().compareTo(r1.key()) < 0) {
-				m.write(r0.toByteArray());
-				m.write(lf);
-			} else {
-				m.write(r1.toByteArray());
 				m.write(lf);
 			}
 		}
