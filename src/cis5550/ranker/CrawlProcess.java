@@ -53,7 +53,7 @@ public class CrawlProcess {
 					 if(row.get("title") == null)
 						 row.put("title", default_title);
 					 if(row.get("snippet") == null)
-						 row.put("snippet", default_body);
+						 row.put("snippet", default_body);l
 				 }
 				 crawl_refined.write(row.toByteArray());
 				 crawl_refined.writeBytes("\n");
