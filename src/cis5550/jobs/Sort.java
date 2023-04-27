@@ -15,7 +15,6 @@ import cis5550.kvs.*;
 public class Sort {
 	static int rounds = 32;
 	public static void main(String[] args) throws Exception {
-<<<<<<< HEAD
 	System.out.println("DAS started");
 	divideAndSort("/home/ubuntu/holi-search-engine/src/worker1/16824601522180c99c94f-574b-4fe8-bd11-60fd261f32f5.appendOnly");
 	System.out.println("DAS ended");
