@@ -42,35 +42,42 @@ public class TestServer {
 		
 		staticFiles.location("static");
 		get("/", (req, res) -> {
-			return Interface.homepage_old;
+			return Interface.home_cached;
 		});
 		
 		get("/search", (req, res) -> {
-			int currentPage = 1;
-			String pQueryParam = req.queryParams("p");
-			if (pQueryParam != null && pQueryParam.matches("\\d+")) {
-			    currentPage = Integer.parseInt(pQueryParam);
-			    System.out.print(currentPage);
-			}
-			res.header("Content-Type", "text/plain");
+			try {
+				int currentPage = 1;
+				String pQueryParam = req.queryParams("p");
+				if (pQueryParam != null && pQueryParam.matches("\\d+")) {
+				    currentPage = Integer.parseInt(pQueryParam);
+				    System.out.print(currentPage);
+				}
+				res.header("Content-Type", "text/plain");
 
-			System.out.println(pQueryParam);
-			// query the ranker 
-			String urlStr = "http://" + rankerAddr + "/search?q=" + URLEncoder.encode(req.queryParams("q"), StandardCharsets.UTF_8) + "&page=" + Integer.toString(currentPage);
-			URL url = new URL(urlStr);
+				System.out.println(pQueryParam);
+				// query the ranker 
+				String urlStr = "http://" + rankerAddr + "/search?q=" + URLEncoder.encode(req.queryParams("q"), StandardCharsets.UTF_8) + "&page=" + Integer.toString(currentPage);
+				URL url = new URL(urlStr);
 
-			// trigger a HTTP request and get the response
-			InputStream in = url.openConnection().getInputStream();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+				// trigger a HTTP request and get the response
+				InputStream in = url.openConnection().getInputStream();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
-			// read the response and send it back to the client
-			String resp = "";
-			String line = null;
-			while ((line = reader.readLine()) != null) {
-			    resp += line;
+				// read the response and send it back to the client
+				String resp = "";
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+				    resp += line;
+				}
+				
+				res.write(resp.getBytes());
+				return null;
+			} catch (Exception e) {
+				System.out.println("No result found.");
+				return null;
 			}
 			
-			res.write(resp.getBytes());
 			
 //			String resp = "["
 //             + "{\"title\": \"title 1\", \"url\": \"http://simple.crawltest.cis5550.net:80/Cv1epgGc.html\"},"
@@ -98,8 +105,6 @@ public class TestServer {
 //				}
 //			}
     		
-
-			return null;
 		});
 		
 		get("/cached", (req, res) -> {
