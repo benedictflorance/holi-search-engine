@@ -888,7 +888,7 @@ public class Interface {
 			+ "                          <h5 class=\"modal-title\">Cached Response</h5>\r\n"
 			+ "                          <button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\" aria-label=\"Close\"></button>\r\n"
 			+ "                        </div>\r\n"
-			+ "                        <div class=\"modal-body\" style=\"height: 500px; overflow-y: auto;\">\r\n"
+			+ "                        <div class=\"modal-body\" style=\"height: 500px; overflow-y: auto; font-family: Arial, sans-serif;\">\r\n"
 			+ "                          <pre>${data}</pre>\r\n"
 			+ "                        </div>\r\n"
 			+ "                        <div class=\"modal-footer\">\r\n"
