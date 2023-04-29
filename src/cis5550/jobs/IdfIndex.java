@@ -12,7 +12,9 @@ public class IdfIndex {
 			 RandomAccessFile index = new RandomAccessFile("/Users/namitashukla/Desktop/indexfilter.table", "rw");
 			 RandomAccessFile file = new RandomAccessFile("/Users/namitashukla/Desktop/w-metrics.table", "rw");
 	         while(true){
-	             Row row = readFrom(file);
+	             Row row = readFrom(index);
+	             if(row==null)
+	            	 break;
 	             String urls = row.get("url");
 	             if(urls == null)
 	                continue;
