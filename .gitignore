@@ -9,5 +9,3 @@ worker1/
 src/worker2/id
 *.icloud
 *.appendOnly
-worker2/id
-worker10/id
