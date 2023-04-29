@@ -53,7 +53,7 @@ public interface FlamePairRDD {
   // flatMapToPair() is analogous to flatMap(), except that the lambda returns pairs 
   // instead of strings, and that the output is a PairRDD instead of a normal RDD.
 
-  public FlamePairRDD flatMapToPair(PairToPairIterable lambda) throws Exception;
+  public FlamePairRDD flatMapToPair(boolean appendOnly, PairToPairIterable lambda) throws Exception;
 
   // join() joins the current PairRDD A with another PairRDD B. Suppose A contains
   // a pair (k,v_A) and B contains a pair (k,v_B). Then the result should contain

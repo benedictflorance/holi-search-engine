@@ -41,7 +41,7 @@ public class IdfCrawl {
 			}
 			final Integer N =i;
 			
-			flamePairRdd.flatMapToPair(urlPage -> {
+			flamePairRdd.flatMapToPair(false, urlPage -> {
 				
 				String url = urlPage._1();
 	            System.out.println(url);

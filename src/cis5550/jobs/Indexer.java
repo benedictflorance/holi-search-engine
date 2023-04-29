@@ -41,7 +41,7 @@ public class Indexer {
 	             
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
 			
-			flamePairRdd.flatMapToPair(urlPage -> {
+			flamePairRdd.flatMapToPair(true, urlPage -> {
 				try {
 				
 		            String url = urlPage._1();

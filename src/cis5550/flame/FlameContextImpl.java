@@ -58,9 +58,13 @@ public class FlameContextImpl implements FlameContext{
 	    Collections.sort(kvsWorkers);
 	  }
 	
-	public Object invokeOperation(String nameOfOp, byte[] lambda, String inputTable, String encodedZeroEle) throws Exception {
+	public Object invokeOperation(String nameOfOp, byte[] lambda, String inputTable, String encodedZeroEle, boolean appendOnly) throws Exception {
 		String opTableName = String.valueOf(System.currentTimeMillis()) + UUID.randomUUID();
-		kvs.persist(opTableName);
+		if (appendOnly) {
+			kvs.appendOnly(opTableName);
+		} else {
+			kvs.persist(opTableName);
+		}
 		
 		downloadWorkers();
 		Partitioner partitioner = new Partitioner();
@@ -123,6 +127,9 @@ public class FlameContextImpl implements FlameContext{
 //	    		  throw new CustomException("Worker "+ i + " failed and returned " + results[i]);
 //              }
 //	      }
+	      if (appendOnly) {
+				kvs.collapse(opTableName);
+	      }
 	      
 	      return opTableName;
 	}
@@ -185,7 +192,7 @@ public class FlameContextImpl implements FlameContext{
 	  // workers, just like the RDD/PairRDD operations.
 	@Override
 	public FlameRDD fromTable(String tableName, RowToString lambda) throws Exception {
-		String opTableName = (String) invokeOperation("/rdd/fromTable", Serializer.objectToByteArray(lambda), tableName, null);
+		String opTableName = (String) invokeOperation("/rdd/fromTable", Serializer.objectToByteArray(lambda), tableName, null, false);
 		FlameRDDImpl resultRDD = new FlameRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;

@@ -32,7 +32,7 @@ public class TermFrequency {
 			FlameRDD flameRdd = ctx.fromTable(CRAWL, row -> row.get("url") + "," + row.get("page"));
 			FlamePairRDD flamePairRdd = flameRdd.mapToPair(s -> new FlamePair(s.split(",")[0], s.split(",",2)[1]));
 			
-			flamePairRdd.flatMapToPair(urlPage -> {
+			flamePairRdd.flatMapToPair(false, urlPage -> {
 				
 				 	String url = urlPage._1();
 		            System.out.println(url);

@@ -19,18 +19,32 @@ public class Connection {
 		return sock.getRemoteSocketAddress();
 	}
 
-	public void respond(String response) throws Exception {
-		sock.getOutputStream().write(response.getBytes());
-		sock.getOutputStream().flush();
+	public void respond(String response) {
+		try {
+			sock.getOutputStream().write(response.getBytes());
+			sock.getOutputStream().flush();
+		} catch (Exception e) {
+			System.out.println(sock.getInetAddress() + ":" + sock.getPort());
+			e.printStackTrace();
+		}
 	}
 
-	public void send(byte[] content, int length) throws Exception {
-		sock.getOutputStream().write(content, 0, length);
-		sock.getOutputStream().flush();
+	public void send(byte[] content, int length) {
+		try {
+			sock.getOutputStream().write(content, 0, length);
+			sock.getOutputStream().flush();
+		} catch (Exception e) {
+			System.out.println(sock.getInetAddress() + ":" + sock.getPort());
+			e.printStackTrace();
+		}
 	}
 
-	public void close() throws IOException {
-		sock.close();
+	public void close() {
+		try {
+			sock.close();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public byte[] readUntilDoubleCRLF() {
@@ -67,7 +81,7 @@ public class Connection {
 
 	}
 
-	public byte[] readLength(int length) throws Exception {
+	public byte[] readLength(int length) {
 		byte[] ret;
 		if (buf.length >= length) {
 			ret = Arrays.copyOfRange(buf, 0, length);
@@ -75,7 +89,11 @@ public class Connection {
 			return ret;
 		}
 		ret = Arrays.copyOf(buf, length);
-		int newBytes = sock.getInputStream().readNBytes(ret, buf.length, length - buf.length);
+		try {
+			sock.getInputStream().readNBytes(ret, buf.length, length - buf.length);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		buf = new byte[0];
 		return ret;
 	}

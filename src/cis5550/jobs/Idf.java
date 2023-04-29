@@ -17,7 +17,6 @@ import cis5550.kvs.Row;
 
 public class Idf {
 	
-	public static String CRAWL = "crawl-1316";
 	public static String INDEX = "index";
 	public static String W_METRIC = "w-metric";
 	public static void run(FlameContext ctx, String[] args) {
@@ -38,7 +37,7 @@ public class Idf {
 			
 			String masterAddr = ctx.getKVS().getMaster();
 			
-			flamePairRdd.flatMapToPair(indexUrl -> {
+			flamePairRdd.flatMapToPair(false, indexUrl -> {
 				
 				String index_word = indexUrl._1();
 	            System.out.println(index_word);
