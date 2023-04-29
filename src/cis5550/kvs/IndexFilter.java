@@ -13,8 +13,8 @@ public class IndexFilter {
 	
 	 public static void main(String args[]) {
 		 try {
-			 Trie trie = new Trie();
-			 trie.buildTrie("/Users/namitashukla/Desktop/holi-search-engine/src/cis5550/jobs/words_alpha.txt");
+//			 Trie trie = new Trie();
+//			 trie.buildTrie("/Users/namitashukla/Desktop/holi-search-engine/src/cis5550/jobs/words_alpha.txt");
 			 RandomAccessFile indexFilter = new RandomAccessFile("/Users/namitashukla/Desktop/indexfilter.table", "rw");
 			 RandomAccessFile file = new RandomAccessFile("/Users/namitashukla/Desktop/index.table", "rw");
 	         while(true){
@@ -22,9 +22,9 @@ public class IndexFilter {
 	             if(row == null)
 	                 break;
 	             String rowkey = row.key();
-	             if(!trie.containsWord(rowkey)) {
-	            	 continue;
-	             }
+//	             if(!trie.containsWord(rowkey)) {
+//	            	 continue;
+//	             }
 	             if(containsDigitsAndAlphabets(rowkey)) {
 	            	 continue;
 	             }
