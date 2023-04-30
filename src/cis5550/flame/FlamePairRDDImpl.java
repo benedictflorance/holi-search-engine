@@ -41,7 +41,7 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	@Override
 	public FlamePairRDD foldByKey(String zeroElement, TwoStringsToString lambda) throws Exception {
 		String encodedZeroEle = URLEncoder.encode(zeroElement, StandardCharsets.UTF_8);
-		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/foldByKey",Serializer.objectToByteArray(lambda),tableName, encodedZeroEle);
+		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/foldByKey",Serializer.objectToByteArray(lambda),tableName, encodedZeroEle, false);
 		FlamePairRDDImpl resultRDD = new FlamePairRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -69,7 +69,7 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	// copies of that string. The lambda is allowed to return null or an empty Iterable.
 	@Override
 	public FlameRDD flatMap(PairToStringIterable lambda) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/flatMap",Serializer.objectToByteArray(lambda),tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/flatMap",Serializer.objectToByteArray(lambda),tableName, null, false);
 		FlameRDDImpl resultRDD = new FlameRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -78,8 +78,8 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	  // flatMapToPair() is analogous to flatMap(), except that the lambda returns pairs 
 	  // instead of strings, and tha tthe output is a PairRDD instead of a normal RDD.
 	@Override
-	public FlamePairRDD flatMapToPair(PairToPairIterable lambda) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/flatMapToPair",Serializer.objectToByteArray(lambda),tableName, null);
+	public FlamePairRDD flatMapToPair(boolean appendOnly, PairToPairIterable lambda) throws Exception {
+		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/flatMapToPair",Serializer.objectToByteArray(lambda),tableName, null, appendOnly);
 		FlamePairRDDImpl resultRDD = new FlamePairRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -90,7 +90,7 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	// a pair (k,v_A+","+v_B).
 	@Override
 	public FlamePairRDD join(FlamePairRDD other) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/join",(((FlamePairRDDImpl)other).getTableName()).getBytes(),tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/join",(((FlamePairRDDImpl)other).getTableName()).getBytes(),tableName, null, false);
 		FlamePairRDDImpl resultRDD = new FlamePairRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -105,7 +105,7 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	// extra credit in HW7; if you do not implement it, please return 'null'.
 	@Override
 	public FlamePairRDD cogroup(FlamePairRDD other) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/cogroup",(((FlamePairRDDImpl)other).getTableName()).getBytes(),tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/pairrdd/cogroup",(((FlamePairRDDImpl)other).getTableName()).getBytes(),tableName, null, false);
 		FlamePairRDDImpl resultRDD = new FlamePairRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;

@@ -196,6 +196,8 @@ public class Trie {
 			System.out.println(trie.containsWord("hello"));
 			System.out.println(trie.containsWord("Hello"));
 			System.out.println(trie.containsWord("begf"));
+			System.out.println(trie.containsWord("be123gf"));
+			System.out.println(trie.containsWord("123456"));
 			
 		} catch (Exception e) {
 			e.printStackTrace();

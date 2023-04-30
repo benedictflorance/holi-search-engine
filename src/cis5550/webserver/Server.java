@@ -66,7 +66,7 @@ public class Server {
 		}
 	}
 	
-	private void send304(Connection conn) throws Exception {
+	private void send304(Connection conn) {
 		String msg = "HTTP/1.1 304 Not Modified";
 		conn.respond(msg + "\r\n");
 		conn.respond("Content-Type: text/plain\r\n");
@@ -75,7 +75,7 @@ public class Server {
 		conn.respond(msg + "\n");
 	}
 
-	private void send400(Connection conn) throws Exception {
+	private void send400(Connection conn) {
 		String msg = "HTTP/1.1 400 Bad Request";
 		conn.respond(msg + "\r\n");
 		conn.respond("Content-Type: text/plain\r\n");
@@ -84,7 +84,7 @@ public class Server {
 		conn.respond(msg + "\n");
 	}
 
-	private void send403(Connection conn) throws Exception {
+	private void send403(Connection conn) {
 		String msg = "HTTP/1.1 403 Forbidden";
 		conn.respond(msg + "\r\n");
 		conn.respond("Content-Type: text/plain\r\n");
@@ -94,7 +94,7 @@ public class Server {
 	}
 
 
-	private void send404(Connection conn) throws Exception {
+	private void send404(Connection conn) {
 		String msg = "HTTP/1.1 404 Not Found";
 		conn.respond(msg + "\r\n");
 		conn.respond("Content-Type: text/plain\r\n");
@@ -103,7 +103,7 @@ public class Server {
 		conn.respond(msg + "\n");
 	}
 
-	private void send405(Connection conn) throws Exception {
+	private void send405(Connection conn) {
 		String msg = "HTTP/1.1 405 Not allowed";
 		conn.respond(msg + "\r\n");
 		conn.respond("Content-Type: text/plain\r\n");
@@ -112,7 +112,7 @@ public class Server {
 		conn.respond(msg + "\n");
 	}
 	
-	private void send500(Connection conn) throws Exception {
+	private void send500(Connection conn) {
 		String msg = "HTTP/1.1 500 Internal Server Error";
 		conn.respond(msg + "\r\n");
 		conn.respond("Content-Type: text/plain\r\n");
@@ -122,7 +122,7 @@ public class Server {
 	}
 
 
-	private static void send501(Connection conn) throws Exception {
+	private static void send501(Connection conn) {
 		String msg = "HTTP/1.1 501 Not Implemented";
 		conn.respond(msg + "\r\n");
 		conn.respond("Content-Type: text/plain\r\n");
@@ -131,7 +131,7 @@ public class Server {
 		conn.respond(msg + "\n");
 	}
 
-	private static void send505(Connection conn) throws Exception {
+	private static void send505(Connection conn) {
 		String msg = "HTTP/1.1 505 HTTP Version Not Supported";
 		conn.respond(msg + "\r\n");
 		conn.respond("Content-Type: text/plain\r\n");

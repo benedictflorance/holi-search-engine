@@ -202,6 +202,34 @@ public class Worker extends cis5550.generic.Worker {
 			return "403 Forbidden";
 		});
 		
+		put("/appendOnly/:table", (req, res) -> {
+			updateAccessTime();
+			String tKey = req.params("table");
+			try {
+				if (!tables.containsKey(tKey)) {
+					tables.put(tKey, new AppendOnly(tKey, dir));
+					res.status(200, "OK");
+					return "OK";
+				}
+				if (!tables.get(tKey).persistent()) {
+					// convert to persistent
+					MemTable mt = (MemTable) tables.get(tKey);
+					Map<String, Row> data = mt.getAllData();
+					Table pt =  new AppendOnly(tKey, dir, data);
+					tables.remove(tKey);
+					tables.put(tKey, pt);
+					res.status(200, "OK");
+					return "OK";
+				}
+				// Already persistent
+				res.status(403, "Forbidden");
+				
+			} catch (Exception e) {
+				
+			}
+			return "403 Forbidden";
+		});
+		
 		put("/data/:table", (req, res) -> {
 			updateAccessTime();
 			try {
@@ -277,6 +305,18 @@ public class Worker extends cis5550.generic.Worker {
 				
 			}
 			res.status(200, "OK");
+			return "OK";
+		});
+		
+		put("/collapse/:table", (req, res) -> {
+			updateAccessTime();
+			if (!tables.containsKey(req.params("table"))) {
+				res.status(404, "Not Found");
+				return "Not Found";
+			}
+			AppendOnly ap = (AppendOnly)tables.get(req.params("table"));
+			File f = ap.reduce();
+			tables.put(ap.getKey(), new PersistentTable(ap.getKey(), dir, f));
 			return "OK";
 		});
 	}

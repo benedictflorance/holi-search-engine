@@ -58,7 +58,7 @@ JSON stringified Java objects, where each object has three fields:
 ``javac -cp "lib/*" --source-path src src/cis5550/webserver/TestServer.java``
 
 ### Run
-``java -cp "../lib/*;" cis5550.webserver.TestServer <frontend-server port> <ranker ip:port>``
+``java -cp "../lib/*;" cis5550.webserver.TestServer <frontend-server port> <ranker ip:port> <kvs ip:port>``
 
 ### Test
 Open browser tab at frontend-server port

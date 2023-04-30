@@ -40,7 +40,7 @@ public class FlameRDDImpl implements FlameRDD {
 	// The lambda is allowed to return null or an empty Iterable.
 	@Override
 	public FlameRDD flatMap(StringToIterable lambda) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/flatMap",Serializer.objectToByteArray(lambda),tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/flatMap",Serializer.objectToByteArray(lambda),tableName, null, false);
 		FlameRDDImpl resultRDD = new FlameRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -53,7 +53,7 @@ public class FlameRDDImpl implements FlameRDD {
     // same values.
 	@Override
 	public FlamePairRDD mapToPair(StringToPair lambda) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/mapToPair",Serializer.objectToByteArray(lambda),tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/mapToPair",Serializer.objectToByteArray(lambda),tableName, null, false);
 		FlamePairRDDImpl resultRDD = new FlamePairRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -67,10 +67,10 @@ public class FlameRDDImpl implements FlameRDD {
 	// credit on HW6 and should return 'null' if this EC is not implemented.
 	@Override
 	public FlameRDD intersection(FlameRDD r) throws Exception {
-		String op1 = (String) flameContextImpl.invokeOperation("/rdd/intersection-intermediate",null,tableName, null);
-		String op2 = (String) flameContextImpl.invokeOperation("/rdd/intersection-intermediate",null,((FlameRDDImpl)r).getTableName(), null);
+		String op1 = (String) flameContextImpl.invokeOperation("/rdd/intersection-intermediate",null,tableName, null, false);
+		String op2 = (String) flameContextImpl.invokeOperation("/rdd/intersection-intermediate",null,((FlameRDDImpl)r).getTableName(), null, false);
 		
-		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/intersection",op2.getBytes(),op1, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/intersection",op2.getBytes(),op1, null, false);
 		FlameRDDImpl resultRDD = new FlameRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -83,7 +83,7 @@ public class FlameRDDImpl implements FlameRDD {
 	// credit on HW6 and should return 'null' if this EC is not implemented.
 	@Override
 	public FlameRDD sample(double f) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/sample",ByteBuffer.allocate(8).putDouble(f).array(),tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/sample",ByteBuffer.allocate(8).putDouble(f).array(),tableName, null, false);
 		FlameRDDImpl resultRDD = new FlameRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -97,9 +97,9 @@ public class FlameRDDImpl implements FlameRDD {
 	// return 'null' if this EC is not implemented.
 	@Override
 	public FlamePairRDD groupBy(StringToString lambda) throws Exception {
-		String op1 = (String) flameContextImpl.invokeOperation("/rdd/groupBy",Serializer.objectToByteArray(lambda),tableName, null);
+		String op1 = (String) flameContextImpl.invokeOperation("/rdd/groupBy",Serializer.objectToByteArray(lambda),tableName, null, false);
 		
-		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/groupByAggregate",null,op1, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/groupByAggregate",null,op1, null, false);
 		FlamePairRDDImpl resultRDD = new FlamePairRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -132,7 +132,7 @@ public class FlameRDDImpl implements FlameRDD {
 	// one copy of those elements.
 	@Override
 	public FlameRDD distinct() throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/distinct",null,tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/distinct",null,tableName, null, false);
 		FlameRDDImpl resultRDD = new FlameRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -165,7 +165,7 @@ public class FlameRDDImpl implements FlameRDD {
 	@Override
 	public String fold(String zeroElement, TwoStringsToString lambda) throws Exception {
 		String encodedZeroEle = URLEncoder.encode(zeroElement, StandardCharsets.UTF_8);
-		String op1 = (String) flameContextImpl.invokeOperation("/rdd/fold",Serializer.objectToByteArray(lambda),tableName, encodedZeroEle);
+		String op1 = (String) flameContextImpl.invokeOperation("/rdd/fold",Serializer.objectToByteArray(lambda),tableName, encodedZeroEle, false);
 		
 		KVSClient kvs = new KVSClient(Master.masterAddr);
     	Iterator<Row> scannedTable = null;
@@ -194,7 +194,7 @@ public class FlameRDDImpl implements FlameRDD {
 	// The lambda is allowed to return null or an empty Iterable.
 	@Override
 	public FlamePairRDD flatMapToPair(StringToPairIterable lambda) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/flatMapToPair",Serializer.objectToByteArray(lambda),tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/flatMapToPair",Serializer.objectToByteArray(lambda),tableName, null, false);
 		FlamePairRDDImpl resultRDD = new FlamePairRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -203,7 +203,7 @@ public class FlameRDDImpl implements FlameRDD {
 	
 	@Override
 	public FlameRDD filter(StringToBoolean lambda) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/filter",Serializer.objectToByteArray(lambda),tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/filter",Serializer.objectToByteArray(lambda),tableName, null, false);
 		FlameRDDImpl resultRDD = new FlameRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;
@@ -211,7 +211,7 @@ public class FlameRDDImpl implements FlameRDD {
 
 	@Override
 	public FlameRDD mapPartitions(IteratorToIterator lambda) throws Exception {
-		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/mapPartitions",Serializer.objectToByteArray(lambda),tableName, null);
+		String opTableName = (String) flameContextImpl.invokeOperation("/rdd/mapPartitions",Serializer.objectToByteArray(lambda),tableName, null, false);
 		FlameRDDImpl resultRDD = new FlameRDDImpl();
 		resultRDD.setTableName(opTableName);
 		return resultRDD;

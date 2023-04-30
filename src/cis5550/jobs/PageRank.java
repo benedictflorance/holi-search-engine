@@ -62,8 +62,10 @@ public class PageRank {
 			while(true) {
 				numberOfIterations++;
 				FlamePairRDD transferTableOld = stateTable
-						.flatMapToPair(pair -> {
+						.flatMapToPair(true, pair -> {
+							System.out.println(pair._1());
 						    String[] tokens = pair._2().split(",");
+						    
 						    String[] urls = Arrays.copyOfRange(tokens, 2, tokens.length);
 						    //check for duplicate links
 						    Set<String> set = new LinkedHashSet<>(Arrays.asList(urls));
@@ -91,21 +93,13 @@ public class PageRank {
 						    if(!selfLink)
 						    	results.add(new FlamePair(pair._1(),"0.0"));
 						    
-						    return new Iterable<FlamePair>() {
-				                @Override
-				                public Iterator<FlamePair> iterator()
-				                {
-				                    return results.iterator();
-				                }
-				            };
+						    return results;
 						});
-						
-				FlamePairRDD transferTable	= transferTableOld.foldByKey("0.0",(a,b) -> ""+(Double.parseDouble(a)+Double.parseDouble(b)));
+				FlamePairRDD transferTable = transferTableOld.foldByKey("0.0",(a,b) -> ""+(Double.parseDouble(a)+Double.parseDouble(b)));
 
-				FlamePairRDD newStateTableJoin = stateTable
-					    .join(transferTable);
-					    
-				FlamePairRDD newStateTable= newStateTableJoin.flatMapToPair(t -> {
+				FlamePairRDD newStateTableJoin = stateTable.join(transferTable);
+				
+				FlamePairRDD newStateTable = newStateTableJoin.flatMapToPair(false, t -> {
 					    	
 					    try {
 					        String url = t._1();
@@ -142,7 +136,8 @@ public class PageRank {
 				                    return Collections.singletonList(String.valueOf(Math.abs(currentRank - previousRank))).iterator();
 				                }
 				            };
-			            }).fold("0.0", (a, b) -> ""+Math.max(Double.parseDouble(a), Double.parseDouble(b)));
+			            })
+			            .fold("0.0", (a, b) -> ""+Math.max(Double.parseDouble(a), Double.parseDouble(b)));
 			    
 			    System.out.println("maxChange" + maxChange);
 			    
@@ -150,7 +145,6 @@ public class PageRank {
 			    stateTable.delete();
 			    transferTableOld.delete();
 			    newStateTableJoin.delete();
-			    
 			    // Replace old state table with new one
 			    stateTable = newStateTable;
 			    
@@ -164,7 +158,7 @@ public class PageRank {
 			
 			KVSClient kvs1 = new KVSClient(masterAddr);
 			kvs1.persist("pageranks");
-			stateTable.flatMapToPair(t -> {
+			stateTable.flatMapToPair(false, t -> {
 			    String url = t._1();
 			    String[] fields = t._2().split(",");
 			    Double currentRank = Double.parseDouble(fields[0]);
