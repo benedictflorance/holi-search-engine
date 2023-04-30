@@ -113,7 +113,7 @@ public class Ranker {
         for(URLWeights urlInfo : urlWeights)
         {
             if(kvs.get("pageranks", URLEncoder.encode(urlInfo.url, StandardCharsets.UTF_8), "rank") != null)
-                urlInfo.set_page_rank(Double.parseDouble(new String(kvs.get("pageranks", urlInfo.url, "rank"))));
+                urlInfo.set_page_rank(Double.parseDouble(new String(kvs.get("pageranks", URLEncoder.encode(urlInfo.url, StandardCharsets.UTF_8), "rank"))));
             else
                 urlInfo.set_page_rank(0.0);
         }
