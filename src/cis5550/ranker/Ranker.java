@@ -4,6 +4,9 @@ import cis5550.tools.Hasher;
 
 import java.io.IOException;
 import com.google.gson.*;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static cis5550.webserver.Server.*;
@@ -109,7 +112,7 @@ public class Ranker {
     public static void obtainPageRank(KVSClient kvs, List<URLWeights> urlWeights) throws IOException {
         for(URLWeights urlInfo : urlWeights)
         {
-            if(kvs.get("pageranks", urlInfo.url, "rank") != null)
+            if(kvs.get("pageranks", URLEncoder.encode(urlInfo.url, StandardCharsets.UTF_8), "rank") != null)
                 urlInfo.set_page_rank(Double.parseDouble(new String(kvs.get("pageranks", urlInfo.url, "rank"))));
             else
                 urlInfo.set_page_rank(0.0);
@@ -141,6 +144,7 @@ public class Ranker {
                 "we've", "what's", "when's", "where's", "who's", "why's", "would"));
         port(port_no);
         get("/search", (req, res) -> {
+            System.out.println("received new req");
             KVSClient kvs = new KVSClient(args[1]);
             String search_query = req.queryParams("q");
             String page = req.queryParams("page") == null ? "1" : req.queryParams("page");
@@ -270,6 +274,7 @@ public class Ranker {
                     urlList.add(sR);
                 }
                 SearchResultsResponse sRR = new SearchResultsResponse(urlList, Integer.parseInt(page), paginatedURLs.size());
+                System.out.println(new Gson().toJson(sRR));
                 return new Gson().toJson(sRR);
             }
         });
